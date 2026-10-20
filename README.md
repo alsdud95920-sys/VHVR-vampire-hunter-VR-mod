@@ -1,26 +1,87 @@
-# Vampire Hunters VR
+# Vampire Hunters VR 0.9.5
 
-An unofficial mod that lets you play **Vampire Hunters** (Steam, build 22267731) in a VR headset with 6DoF head tracking and two-handed motion controls. It is a BepInEx 6 (Unity IL2CPP) plugin plus a native OpenXR host that renders the game's own cameras into the headset.
+An unofficial mod that lets you play **Vampire Hunters** (Steam, build 22267731) in a VR headset with 6DoF head tracking and two-handed motion controls. It is a BepInEx 6 (Unity IL2CPP) plugin plus a native OpenXR host that renders the game's own cameras into the headset. Virtual Desktop (VDXR) is the only OpenXR runtime tested on real hardware.
 
-This repository is the **source release**. The first-party code is licensed under **GNU GPL version 3 or (at your option) any later version** — see `LICENSE`. That license covers only code written for this project. It does not grant any rights to Vampire Hunters game material or to third-party components; see `THIRD-PARTY-NOTICES.txt`.
+Not affiliated with or endorsed by the game's developer or publisher. Modding a running game can in principle affect online scores or accounts, so prefer single-player/offline play.
 
-Not affiliated with or endorsed by the game's developer or publisher. Use it at your own risk, and prefer single-player/offline play: modding a running game can in principle affect online scores or accounts.
+Download: <https://github.com/alsdud95920-sys/VHVR-vampire-hunter-VR-mod/releases/tag/v0.9.5>
 
-## Status
+## Install
 
-Be aware of what is and is not verified before relying on this:
+1. Download `VampireHuntersVR-0.9.5.zip` from the release page and check its hash against `VampireHuntersVR-0.9.5.sha256.txt`:
 
-- Offline test fixtures pass (9 projects, see below). They check math, policy and source-level invariants only; they do **not** prove behaviour inside the headset.
-- Confirmed once by the author, in a single full headset session (main menu → stage → back to main menu): hand pose frame (`HandPoseFrame=Head`), the turret-build cycling input, and the right-hand menu ray/click all worked, with no crash (D-202 / D-206 / D-207). Multiple machines, other headsets, and long sessions are still unconfirmed.
-- Snap turn is not available while `HandPoseFrame=Head` (BUG-203).
-- An earlier `coreclr.dll` access violation (`0xc0000005`) has a plausible cause that was fixed (BUG-205, native/managed hand struct size mismatch), but the cause was never proven and long-session stability is unconfirmed.
-- Only the Virtual Desktop OpenXR runtime has been tested on real hardware. If the headset is not connected when the game starts, the host fails once with `xrGetSystem XrResult=-35` and that session stays flat (RUN-001).
-- In menus, `LogOutput.log` repeats `EnableHands returned 6/2 - retrying every frame` (BUG-206). It is harmless — controllers and rays work — it only inflates the log file.
-- The release package's installer manifest still records `version = 0.9.5-rc1` and its console banner says "preview installer"; these are cosmetic, the shipped binaries are the tested 0.9.5 set.
+   ```powershell
+   Get-FileHash .\VampireHuntersVR-0.9.5.zip -Algorithm SHA256
+   ```
 
-Details: `docs/PHASE_PLAN.md`, `docs/BUGS.md`, `docs/QUESTIONS.md`, `docs/TARGET_PROFILE.md`, `docs/DECISIONS.md`.
+2. **Close the game.** Extract the zip **into the game folder** — the folder that contains `Vampire Hunters.exe`.
+3. Run `install.bat` from the extracted `VampireHuntersVR-0.9.5` folder. If you get a permission error, run it as administrator. The installer only writes its own files and leaves the retail game files alone.
+4. Run `VhvrSettings.exe` (same folder) to pick your values, then press **Apply**:
+   - **Screen size** (per-eye render resolution): Low 0.8 / Normal 1.0 (default) / High 1.2 / Custom 0.5–2.0
+   - **In-VR UI size**: 0.50–3.00 (default 1.50)
+   - **Eye MSAA**: 1 (off) / 2 / 4 (default) / 8
+   - **Anisotropic filtering**: off (default) / on (16x)
 
-## Contents
+   Bigger values look sharper and cost frame time. Settings are read once at game start, so change them with the game closed.
+5. Connect the headset (Virtual Desktop), then start the game from Steam. The first launch takes one to three minutes.
+6. VR starts in the main menu. Pick a stage with the in-VR panel (or on the monitor), and the run starts in VR.
+
+`uninstall.bat` in the same folder restores the stock game folder.
+
+> **Auto-fire.** The mod is designed around the game's own auto-fire option being **off**, so that your trigger pulls are what fires. Leaving it on does not break anything — it just means the game fires on its own as well.
+
+## Controls
+
+Right-handed layout only. Your hands are tracked; the triggers fire the weapon in that hand.
+
+**Recenter first.** Click **both thumbsticks at the same time** to re-place the in-VR menu panel in front of the direction you are looking. Use it whenever a panel ends up behind you or at a bad angle — no restart needed. It needs `[MenuScreen] RecenterChord=true` in `BepInEx\config\local.vampirehuntersvr.extras.cfg`, which is the default.
+
+### Button map
+
+| Input | Action |
+|---|---|
+| Left stick | Move (analog, relative to the direction you face). In the pause menu the same stick moves the game's UI cursor |
+| Left stick click | Left robot arm (`Q`) |
+| Left trigger | Left-hand weapon: primary fire (press ≥ 0.6) |
+| Left X (lower face) | Interact (`Z`) |
+| Left Y (upper face) | **Within 30 cm of your head: reload the left hand.** Further away: left-hand secondary fire |
+| Left menu (≡) | Pause (`ESC`) |
+| Right stick up | Blood ability (`F`) |
+| Right stick down | Special ability / scout dash (`SHIFT`) |
+| Right stick click | Right robot arm (`E`) |
+| Right stick left/right | Snap turn (30°) — **not available in this build**, see the note below |
+| Right trigger | Right-hand weapon: primary fire |
+| Right A (lower face) | Jump (`SPACE`); in menus it confirms |
+| Right B (upper face) | Same as left Y, for the right hand: reload close to your head, secondary fire further away |
+| Grips (squeeze) | Unassigned during normal play. In the Engineer build mode only: left grip = previous turret type, right grip = next turret type, both grips = place the turret |
+| Right system button (○) | Unused — reserved by the runtime |
+
+### Menus, HUD and level-up cards
+
+| Input | Action |
+|---|---|
+| Both thumbsticks clicked | Recenter the menu panel in front of your view |
+| Either trigger | Click with that hand's laser: menu items (≥ 0.5), HUD buttons and level-up cards (≥ 0.6) |
+| Stick up/down while the laser rests on a list | Scroll that list |
+
+### Two things to know
+
+- **Snap turn does nothing by default.** With the shipped hand pose frame (`HandPoseFrame=Head`) the right stick's left/right snap turn is refused on purpose so the view never jumps; turning is done with your body (`BUG-203`). The old behaviour is only available with `HandPoseFrame=Anchor`.
+- **Engineer turret.** The build-mode buttons (grip to cycle the turret type, both grips to place it) exist in the code, but I have **not been able to confirm in the headset that the Engineer's turret actually builds and places correctly**, so treat that one class as unverified.
+
+
+## Download (release package)
+
+The playable package is published under **Releases**, not committed to this repository (`dist/` is git-ignored; the binaries live as a release asset).
+
+- Release page: <https://github.com/alsdud95920-sys/VHVR-vampire-hunter-VR-mod/releases/tag/v0.9.5>
+- Asset: `VampireHuntersVR-0.9.5.zip` — BepInEx 6 plugin, native OpenXR host, `VhvrSettings.exe`, install/uninstall scripts and the third-party licenses.
+- Checksums: `VampireHuntersVR-0.9.5.sha256.txt` next to the asset.
+- Korean user guides: `installer/README-KO.md` (usage) and `installer/SETTINGS-README-KO.md` (the settings tool).
+
+Release binaries in that package are byte-identical to the set the author tested in the headset; the source tree in this repository is what produced them (no source edits were made for packaging — only user-facing documents differ).
+
+## Repository contents
 
 - `src/core` — BepInEx IL2CPP plugin and OpenXR host (`VampireHuntersVR.Stage0`), `Install-Stage0.ps1`
 - `src/interaction`, `src/render` — hand aim/fire/UI/markers, stereo math, resolution policy
@@ -30,7 +91,7 @@ Details: `docs/PHASE_PLAN.md`, `docs/BUGS.md`, `docs/QUESTIONS.md`, `docs/TARGET
 - `config` — schema, defaults, bindings, manifest, supported build
 - `installer` — install/uninstall scripts and the Korean user READMEs
 - `tests` — offline fixtures and the scripts they read
-- `docs` — design notes, decisions, bug log, open questions and playtest scripts
+- `docs` — design notes, decisions, bug log, open questions, the controller map (`docs/CONTROLS.md`) and playtest scripts
 - `licenses` — license texts for the third-party components used
 
 Not included: the game, BepInEx and .NET runtime binaries, interop assemblies generated from the game, compiled outputs, logs and backups.
@@ -54,20 +115,8 @@ Projects: `HandAim`, `GameplayCamera`, `WeaponRuntime`, `VhvrExtras`, `FlameEndp
 
 `FlameEndpoint` and some scripts under `tests/` read the installed game. They default to `C:\Program Files (x86)\Steam\steamapps\common\Vampire Hunters`; set the environment variable `VHVR_GAME_ROOT` to the folder containing `Vampire Hunters.exe` if yours is elsewhere. `VHVR_XR_SIM_JSON` optionally points to a Meta XR Simulator runtime JSON.
 
-## Download (release package)
+These fixtures check math, policy and source-level invariants only; they do not prove behaviour inside a headset.
 
-The playable package is published under **Releases**, not committed to this repository (`dist/` is git-ignored; the binaries live as a release asset).
+## License and notices
 
-- Release page: <https://github.com/alsdud95920-sys/VHVR-vampire-hunter-VR-mod/releases/tag/v0.9.5>
-- Asset: `VampireHuntersVR-0.9.5.zip` — BepInEx 6 plugin, native OpenXR host, `VhvrSettings.exe`, install/uninstall scripts and the third-party licenses.
-- Checksums: `VampireHuntersVR-0.9.5.sha256.txt` next to the asset. Verify before installing:
-
-```powershell
-Get-FileHash .\VampireHuntersVR-0.9.5.zip -Algorithm SHA256
-```
-
-Release binaries in that package are byte-identical to the set tested in the headset session described above; the source tree in this repository is what produced them (no source edits were made for packaging — only user-facing documents differ).
-
-## Installing and playing
-
-Korean user guides are in `installer/README-KO.md` and `installer/SETTINGS-README-KO.md`. In short: copy the package folder into the game folder with the game closed, run `install.bat`, connect the headset (Virtual Desktop), start the game from Steam. `uninstall.bat` restores the stock game folder.
+The first-party code is licensed under **GNU GPL version 3 or (at your option) any later version** — see `LICENSE`. That license covers only code written for this project. It does not grant any rights to Vampire Hunters game material or to third-party components; see `THIRD-PARTY-NOTICES.txt` and `licenses/`.
