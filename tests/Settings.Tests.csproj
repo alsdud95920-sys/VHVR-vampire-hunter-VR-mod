@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="SettingsTests.cs" />
+    <Compile Include="..\src\core\Stage0Settings.cs" Link="Stage0Settings.cs" />
+    <Compile Include="..\src\settings\HostConfigTool.cs" Link="HostConfigTool.cs" />
+    <Compile Include="..\src\render\RenderResolutionPolicy.cs" Link="RenderResolutionPolicy.cs" />
+  </ItemGroup>
+</Project>

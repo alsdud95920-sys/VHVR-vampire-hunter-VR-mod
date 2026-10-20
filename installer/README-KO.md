@@ -1,0 +1,70 @@
+# Vampire Hunters VR 0.9.5
+
+> **알려진 한계**: D-202/D-206/D-207 헤드셋 검증과 장시간 안정성 확인은 아직 끝나지 않았고, 과거 CoreCLR 크래시 원인은 미확정입니다. 오프라인 테스트 통과는 헤드셋 동작을 증명하지 않습니다. 비공식 모드이며 사용에 따른 책임은 사용자에게 있습니다(싱글/오프라인 플레이 권장). 자체 소스는 GPL-3.0-or-later이며 제3자 구성요소는 `THIRD-PARTY-NOTICES.txt`와 `licenses` 폴더를 참고하세요.
+
+## 0.9.5 내용
+- 기존 0.9.4 패키지 기반; Stage0, NativeHost, Extras만 이미 검증된 D-206/D-207 설치 DLL로 교체.
+- 설치 기본값: HandPoseFrame=Head, TurretCycle=Stick (D-202/D-206).
+- D-207 Extras 회귀 fixture 78/78 통과. 오른손 메뉴 레이 시각 확인과 crash-free 세션은 미검증.
+
+
+
+Vampire Hunters(Steam, 빌드 22267731)를 VR 헤드셋에서 양손 6DoF으로 플레이하는 비공식 모드입니다.
+포션·상자 위치 표시(화살표), 화면 설정 도구(`VhvrSettings.exe`: 해상도 / In-VR UI / 눈당 MSAA), 그리고 2026-10-14 추가된 5가지 개선(별도 패치 플러그인 `VhvrExtras.dll`)이 들어 있습니다.
+**메인 메뉴부터 VR로 시작합니다**(`MenuFirst=true`). 스테이지 카메라가 생기면 호스트가 게임플레이 손·무기 통합을 설치하도록 되어 있습니다. 실제 전환/손 조작은 아래 헤드셋 테스트 항목에 따라 확인이 필요합니다.
+
+## 0.6 → 0.7 변경 (Quality 다이얼 제거, MSAA 노출)
+- 0.6까지 있던 `GraphicsQuality`(Unity 품질 레벨 강제 지정) 설정 다이얼을 **완전히 제거**했습니다(D-187). 이제 게임 자체의 품질 설정(Steam 실행 시 사용자가 고른 값 / PlayerPrefs)을 그대로 사용합니다. 모드가 두 번째로 추측하는 일이 없어졌습니다.
+- `VhvrSettings.exe`에는 **눈당 MSAA**(`EyeMsaa`, 1/2/4/8) 선택이 들어 있습니다(0.6 코드에는 있었지만 0.6 빌드의 `install.ps1` 초기값과 README에는 빠져 있던 항목). 기본 **4 = shipped 값**, `install.ps1`이 첫 설치에서 항상 `EyeMsaa = 4`를 박아 둡니다. 자세한 내용과 CLI 상태는 `SETTINGS-README-KO.md`.
+
+## 필요한 것
+- Vampire Hunters (Steam), 빌드 22267731
+- Quest 계열 헤드셋 + 등록된 OpenXR 런타임 (Virtual Desktop Streamer만 실기기 검증됨)
+- Windows 10/11 (.NET 6 런타임은 동봉). 첫 실행 때 인터넷 필요(Unity 라이브러리 내려받기)
+
+## 설치 / 제거
+1. 이 폴더를 게임 폴더(`Vampire Hunters.exe`가 있는 곳) 안에 풉니다.
+2. **게임을 끈 상태에서** `install.bat` 실행. 권한 오류가 나면 관리자 권한으로 실행.
+3. 제거는 `uninstall.bat`. 게임 원본 파일은 건드리지 않으며, 제거하면 순정 상태로 돌아갑니다.
+
+## 플레이
+1. 헤드셋을 PC에 연결(Virtual Desktop)하고 Steam에서 게임 실행. 첫 실행은 1~3분 걸립니다.
+2. **모니터에서** 마우스로 플레이 → 스테이지 선택 → 시작.
+3. 스테이지가 시작되면 헤드셋을 쓰면 VR 화면입니다. 포션·상자는 화살표로 표시됩니다.
+
+## 화면 설정 (`VhvrSettings.exe`, 3개 항목)
+`VhvrSettings.exe`를 **게임을 끄고** 실행합니다. **`install.bat`과 같은 폴더**에 있고 (같은 폴더의 .dll/.json 파일이 함께 있어야 함), `install.bat` 실행 후에는 설치한 게임의 설정 파일을 자동으로 찾습니다.
+
+1. **화면 크기(눈 렌더 해상도)** — `EyePreset` / `EyeWidth` / `EyeHeight` / `EyeScale`
+   | 선택 | 눈 하나당 | 양쪽 눈 합계 |
+   |---|---|---|
+   | Low 0.8 | 1536x864 | 3072x1728 |
+   | Normal 1.0 (기본) | 1920x1080 | 3840x2160 |
+   | High 1.2 | 2304x1296 | 4608x2592 |
+   | Custom 0.5~2.0 | 배율 x 1920x1080 | 배율 x 3840x2160 |
+2. **In-VR UI size** — `uiScale` (0.50–3.00, 기본 1.50)
+3. **Eye MSAA** — `EyeMsaa` (1 = off, 2 / 4 / 8 = 그만큼 샘플, 기본 4)
+
+큰 값일수록 선명하지만 프레임이 떨어지고, MSAA는 더 많은 샘플 = 매끄러운 가장자리 + GPU 비용. 설정 파일: `<게임>\BepInEx\config\vhvr-openxr-host.json`. 도구는 저장 전에 `.bak` 백업을 만듭니다. 자세한 내용은 `SETTINGS-README-KO.md`.
+
+## 5가지 개선 (`VhvrExtras.dll`, 2026-10-14) — **아직 헤드셋 미검증**
+설정 파일: `<게임>\BepInEx\config\local.vampirehuntersvr.extras.cfg` (첫 실행 시 자동 생성).
+| 요청 | 내용 | 기본값 / 설정 키 |
+|---|---|---|
+| 트리거 유지 자동 연사 | 한 방씩 나가는 **느린 무기**도 트리거를 잡고 있으면 계속 나감 | 0.5초 / `SemiAutoRetriggerSeconds`, 대상 기준 2발/초 / `RetriggerMaxFireRate` |
+| Y/B 대체 사격 | 좌 컨트롤러 Y=특수, 우 B=블러디 러시 | 좌우가 반대면 `AbilityFace`만 변경 |
+| 쿨타임 햅틱 | 다시 쏠 수 있는 시점에 그 손 컨트롤러가 짧게 진동 | `CooldownHaptic`(켜짐), 세기 `CooldownHapticAmplitude` |
+| UI 1.5배 | VR 안의 HUD/글자를 1.5배로 | `UiScale`(1.5), 설정 도구의 **In-VR UI size x**가 우선 |
+| 메뉴 VR 패널 | 월드 패널 + 컨트롤러 레이저 선택 | `MenuFirst=true` — 메인 메뉴에서 VR을 시작하고 스테이지 카메라 진입 때 손·무기 설치를 시도합니다 |
+
+## 알려진 한계 (정직)
+- **2026-10-14 추가된 5가지 개선은 아직 헤드셋으로 확인하지 않았습니다.** 코드가 후킹에 성공했다는 것(로그 `PATCH_APPLIED`)과 실제 동작은 다릅니다. 확인 항목과 절차는 번들의 `docs`가 아니라 프로젝트 문서(`docs\playtests\PLAYTEST-EXTRAS-KO.md`)에 있습니다.
+- 메인 메뉴→스테이지 전환은 별도 검증이 필요합니다. 스테이지 진입 뒤 손 조준/무기가 나타나지 않으면 `hand-aim.json`과 BepInEx 로그를 수집해 원인을 확인해야 합니다. `MenuFirst=true`여도 입자·UI·게임플레이 훅이 실제 작동한다는 것은 플레이테스트 전까지 확정이 아닙니다.
+- 쿨타임 햅틱은 게임의 실제 쿨다운을 읽은 값이 아니라 무기 연사율로 계산한 근사 시점입니다.
+- 이 번들의 코드는 0.6-final에서 `GraphicsQuality` 관련 코드·설정·UI를 모두 제거하고 src를 다시 빌드했습니다(0.7, D-187). 포션/상자 마커·화면 크기·In-VR UI·MSAA는 그 시점에 사용자 착용 확인을 받았지만, **이 번들 자체를 헤드셋으로 다시 실행해 본 것은 아닙니다.**
+- 검증한 것: DLL 빌드 성공, 설정 도구 자체 점검(`--selftest`/`--form-selftest`) 통과, 임시(가짜) 게임 폴더에서 설치 → 설정 변경(MSAA 포함) → 제거 왕복.
+- 눈 이미지 비율은 16:9라 헤드셋 시야 비율과 달라 약간 늘어나 보일 수 있습니다.
+- 게임은 싱글 플레이 전용입니다. 온라인 기능과 함께 쓰지 마세요.
+- 로그 위치: `%LOCALAPPDATA%\VampireHuntersVR\run`
+
+저작권: 게임 실행 파일·에셋·세이브는 포함하지 않습니다. 라이선스는 `licenses\`, `THIRD-PARTY-NOTICES.txt` 참고.

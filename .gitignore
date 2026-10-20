@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+# Vendored third-party payloads at the repo root (BepInEx distribution) stay local. The pattern is anchored
+# on purpose: an unanchored `tools/` also swallowed src/tools/, which is first-party source (D-062).
+/tools/
+artifacts/
+dist/*
+!dist/README.md
+lib/
+*.user
+*.suo
+# Never commit proprietary game DLLs/assets or personal saves.
+backups/
+docs/playtests/reports/
+# Raw identifier reports remain local; summaries are recorded in living documents.

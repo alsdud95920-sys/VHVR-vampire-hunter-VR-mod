@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="..\..\extras\VhvrExtras\Features\NativeHandsAbi.cs" Link="NativeHandsAbi.cs" />
+    <Compile Include="..\..\extras\VhvrExtras\Policies\SemiAutoFirePolicy.cs" Link="SemiAutoFirePolicy.cs" />
+    <Compile Include="..\..\extras\VhvrExtras\Policies\CooldownHapticPolicy.cs" Link="CooldownHapticPolicy.cs" />
+    <Compile Include="..\..\extras\VhvrExtras\Policies\UiScalePolicy.cs" Link="UiScalePolicy.cs" />
+    <Compile Include="..\..\extras\VhvrExtras\Policies\PanelGeometryPolicy.cs" Link="PanelGeometryPolicy.cs" />
+    <Compile Include="..\..\extras\VhvrExtras\Policies\PoseMathPolicy.cs" Link="PoseMathPolicy.cs" />
+  </ItemGroup>
+</Project>

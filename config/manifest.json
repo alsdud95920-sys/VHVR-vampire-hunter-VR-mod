@@ -1,0 +1,80 @@
+{
+  "game": {"name": "Vampire Hunters", "version": "Steam build 22267731", "engine": "Unity 2022.3.37f1 IL2CPP"},
+  "discoveryStatus": "STATIC_NAMES_ONLY_NOT_RUNTIME_MAPPED",
+  "skeleton": {"head": null, "hand_l": null, "hand_r": null, "hips": null, "spine": []},
+  "weapons": [],
+  "holsters": {},
+  "interactables": [],
+  "vehicles": [],
+  "ui": [],
+  "combatRequirements": {"maxSimultaneousWeaponSlots": 14, "bankMapping": "PENDING_EVIDENCE_AND_USER_DECISION"},
+  "inputDesign": {
+    "evidenceStatus": "DESIGN_ONLY_NOT_IMPLEMENTED",
+    "designDoc": "docs/INPUT-MAP.md",
+    "bindingTable": "config/bindings.json",
+    "decision": "D-050",
+    "amendedBy": "D-059",
+    "activeFamily": "oculus_touch",
+    "activeFamilyReason": "The active OpenXR runtime on this PC (VDXR 1.0.10.0) carries no /interaction_profiles/meta path; runtime confirmation pending via xrGetCurrentInteractionProfile.",
+    "roleModel": "dominant|off, fixed to right|left; right-handed only (D-051), so no UserDominantHand swap and no second variant to prove",
+    "reservedNotBindable": ["input/system/click"],
+    "gripAssignment": {"status": "REMOVED", "decision": "D-057", "reason": "The user deleted the grip binding ('그립버튼에 키 할당은 없애고'), so the squeeze carries no action: the D-056 main-fire gate is gone with it and the trigger alone fires that hand's main weapon (Q-031 answered). bindings.deliberatelyUnbound records input/squeeze/value, and the validator fails if any action binds it again."},
+    "reloadDesign": {
+      "decision": "D-059",
+      "userRequest": "2026-10-07: '장전은 왼손 y버튼 두번누르면 왼손 장전 오른손은 b버튼 두번 누르면 장전으로 만들 수 있겠어? 아마 게임 코드를 수정해야 할지도 몰라.' - per-hand reload on a double tap of that hand's upper face button.",
+      "evidenceStatus": "STATIC_ASSEMBLY_SHAPE_NOT_RUNTIME_MAPPED",
+      "gameApi": ["Weapon.reload() : void () [public virtual]", "Weapon.force_reload(int) : void (int) [public virtual]", "Weapon.instant_reload(float, bool) : void (float, bool) [public virtual]", "SecondaryWeapon.force_reload(int) overrides the same signature", "PlayerController.reload_all_weapons() : void () - the path the game's own R key takes", "PlayerInputController.reloadPressed / ReloadInput(bool) - the input plumbing behind R"],
+      "source": "artifacts/recon-asm/full/assembly-recon.json (all-type member dump of tools/interop/Assembly-CSharp.dll, sha256 0494F1BA5514BBBE9632A328A20565E53554C312447E7F8380F5ECE9B927EED5), re-derived by the assembly-aim-slot-pin check every verifier run",
+      "proves": "The game reloads PER WEAPON OBJECT and every Weapon exposes its own public virtual reload(), so the mod can reload one hand's weapon without touching the other: per-hand reload needs no edit to the game's code, only a call to the game's own API - the same shape as the per-slot fire API in aimDesign.handSlotEvidence (D-051).",
+      "doesNotProve": "That a given weapon object is the hand's active slot weapon at that moment, what the int parameter of force_reload selects, whether the weapon must be idle, or that the game's own state machine accepts anything except PlayerController.reload_all_weapons(). Stage 6B questions - Q-037.",
+      "fallback": "If per-hand reload cannot be proven, the double tap forwards to the game's own single 재장전 (PlayerController.reload_all_weapons(), the R path) and that downgrade is recorded in D-059 + Q-037, never shipped silently."
+    },
+    "openQuestions": ["Q-033", "Q-036", "Q-037"]
+  },
+  "aimDesign": {
+    "evidenceStatus": "DESIGN_ONLY_NOT_IMPLEMENTED",
+    "designDoc": "docs/TWO-HAND-AIM.md",
+    "decision": "D-050",
+    "amendedBy": "D-058",
+    "hands": [
+      {"role": "dominant", "physicalDefault": "right", "function": "aim_and_fire"},
+      {"role": "off", "physicalDefault": "left", "function": "move_and_utility"}
+    ],
+    "modes": [
+      {"id": "per_hand_independent", "status": "SELECTED_BY_USER_Q024", "note": "Each hand aims and fires its own weapon; two independent aim states. The user asked for this reading on 2026-10-07 and the game has a per-hand-slot firing model (see handSlotEvidence). It is the ONLY mode since D-056."}
+    ],
+    "modesRemoved": [
+      {"id": "two_hand_linked", "decision": "D-056", "removed": "2026-10-07 (user request)", "was": "PROPOSED_LINK_ON_RANGE with a support point on manifest.weapons[].grab_points[support] and auto/toggle/hold engagement", "reason": "The user removed the two-hand link outright ('투핸드 링크 없애라'). There is therefore no link radius, no support point, no TwoHandMode setting and no link gesture; the grip is not a link control. Nothing about this is a scope cut to be reversed silently - re-adding a link needs a new user decision and a fresh Stage 6B design pass."}
+    ],
+    "aimSource": {"owner": "WEAPON_SCRIPT", "members": ["Weapon.muzzle_position", "Weapon.muzzle_flash_spawn", "Weapon.shoot_forward(..., Transform)", "Weapon.aim_assist_radius"], "evidence": "docs/CAMERA-PIN.md (D-046) - assembly shape, not a proven call site"},
+    "handSlotEvidence": {
+      "evidenceStatus": "STATIC_ASSEMBLY_SHAPE_NOT_RUNTIME_MAPPED",
+      "decision": "D-051",
+      "source": "tools/interop/Assembly-CSharp.dll (game-derived, git-ignored) read only by src/diagnostics/AssemblyEvidence.cs; re-derived every verifier run by tests/verify.ps1 (assembly-aim-slot-pin) into artifacts/assembly-aim-slot/",
+      "weaponSlotEnum": "EWeaponSlot = LEFT_HAND, RIGHT_HAND, LEFT_TOP_HAND, RIGHT_TOP_HAND, PASSIVE, COUNT",
+      "perSlotFireApi": ["PlayerController.fire(EWeaponSlot, ref bool, float)", "PlayerController.fire_secondary_shot(EWeaponSlot)", "PlayerController.fire_release(EWeaponSlot, ref bool)", "PlayerController.const_shooting(EWeaponSlot)", "PlayerController.weapon_slot_avaliable(EWeaponSlot)"],
+      "perHandRules": ["PlayerController.start_with_two_weapons()", "PlayerController.more_damage_on_other_hand_after_shot()", "PlayerController.inverted_weapon_slot(int)", "PlayerController.update_weapons_position_primary_based_on_fov()"],
+      "aimTransformParam": "Weapon.shoot_forward(bool, float, bool, bool, float, bool, ElementalDamageType, bool, UnityEngine.Transform) -> EnemyCollider",
+      "proves": "The game's own weapon model is per hand slot (LEFT_HAND / RIGHT_HAND / LEFT_TOP_HAND / RIGHT_TOP_HAND / PASSIVE) and firing is dispatched per slot, so independent per-hand aim and fire has a game-side foundation for the mod to drive instead of invent.",
+      "doesNotProve": "That two slots can hold and aim simultaneously in a VR session, that each slot's aim direction can be redirected independently, that the trailing Transform parameter is the aim origin, or that aim assist (get_closes_enemy_direction, aim_assist_radius) will not fight a hand-driven direction. Those are Stage 6B runtime questions."
+    },
+    "recoil": {"applies": "weapon_in_hands", "never": "camera", "slider": "0..1", "default": 0.6},
+    "aimSmoothing": {"default": 0, "note": "Opt-in only; a shipping reference mod smooths aim, but smoothing reads as input lag in a VR conversion."},
+    "crosshair": {"default": "off", "renderAt": "muzzle_raycast_hit_distance"},
+    "weaponSlots": {"total": 14, "handMapping": "PENDING_EVIDENCE_AND_USER_DECISION", "mustNotDrop": "multi-weapon gameplay, auto-fire, reload rules (D-005)"}
+  },
+  "userReportedMechanics": {
+    "evidenceStatus": "USER_REPORTED_NOT_RUNTIME_MAPPED",
+    "reportedDate": "2026-10-06",
+    "movement": ["double_jump", "dash"],
+    "combat": ["auxiliary_weapon_q", "auxiliary_weapon_e", "blood_ability", "primary_fire", "secondary_fire"],
+    "flatControlNotes": {"move": "오른쪽으로 이동 = D (WASD family)", "primary_fire": "발사 = LMB (main) / X (alt)", "secondary_fire": "보조 발사 = RMB (main) / CTRL (alt) - the Korean build calls it 보조발사; the mod drives it from the upper face button + trigger (D-057)", "jump": "점프 = SPACE (main) / SCROLL UP (alt)", "interact": "상호작용 = Z (main) / G (alt) - CONFIRMED from the game's own keybinding menu (D-058); Q-034 answered, matching PlayerInputController.Interact", "reload": "재장전 = R (main) / V (alt) - meaning confirmed by the menu (D-058). The flat game has ONE reload key, so the per-hand split is the mod's own call (D-059): reload_off/reload_dominant fire on a double tap of that hand's upper face button and are expected to reach Weapon.reload() on that hand's weapon (Q-037)", "blood_ability": "혈능력 = F (main) / C (alt)", "special_ability": "특수 능력 = SHIFT (main) / CTRL (alt) - PlayerInputController.SpecialAbility; NOT a separate VR action, and Q-035 is ANSWERED (D-059): the user reports the SCOUT's special ability IS the dash, so the mod's dash (left X) forwards to SHIFT and stays there. Other characters may carry a different 특수 능력, which is the game's business - the mod forwards to its key, not to a named ability", "auxiliary_weapon_q": "Q = 왼쪽 로봇 팔 (left robot arm, ArmL)", "auxiliary_weapon_e": "E = 오른쪽 로봇 팔 (right robot arm, ArmR)", "manual_level_up": "수동 레벨 업 = T (main) / L (alt); NOT mapped yet (Q-036)"},
+    "flatControlNotesSource": "The game's OWN keybinding menu (키 바인딩 - 키보드 및 마우스 전용), Korean build, screenshot supplied by the user 2026-10-07; corroborated by the PlayerInputController member list already recorded in D-031. First-party data, so it supersedes the incomplete v4-probe key list. The menu scrolls, so further rows may exist. D-058.",
+    "terminology": {"보조무기": "auxiliary weapon - the game's own Q/E keys, bound as aux_weapon_1/aux_weapon_2 on the two stick presses", "보조발사": "secondary fire / the flat RMB alt-fire - what fire_secondary_off / fire_secondary_dominant drive behind the upper face button. The user settled the wording on 2026-10-07 ('앞으로 보조발사라 부르도록'), which is why the old fire_aux_* / fire_secondary split is gone: they were the same thing under two names (Q-029 answered)."},
+    "interactionVerb": "USER_REPORTED 2026-10-07 (D-057) and its flat target now CONFIRMED (D-058): an interact verb exists and the user wants it on the right stick pushed up; the game's own keybinding menu shows it is 상호작용 = Z (main) / G (alt), matching PlayerInputController.Interact (Q-034 answered). Nothing in the game has been shown to be interactable yet (interactables is still empty), and a Stage 6B negative finding is a bug entry, not a silent remap.",
+    "bloodAbilityDescription": "User describes a frenzy-like state; exact activation/effects/duration unknown.",
+    "runtimeOwnership": "NOT_MAPPED",
+    "vrBindings": "NOT_IMPLEMENTED"
+  },
+  "notes": "Empty inventories mean undiscovered, not absent/unsupported. Do not invent weapon IDs, bone names or coordinates from keyword hits."
+}

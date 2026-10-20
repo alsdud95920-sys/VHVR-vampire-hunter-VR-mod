@@ -1,0 +1,13 @@
+{
+  "steamAppId": "2206270",
+  "steamBuildId": "22267731",
+  "depotManifest": "3974471454289775655",
+  "unityVersion": "2022.3.37f1",
+  "status": "EXACT_BUILD_GUARD_NOT_STEAM_VERSION_PIN",
+  "files": [
+    { "path": "Vampire Hunters.exe", "bytes": 666624, "sha256": "16B22CD6FE79BAC57C848FD85A5E5B175703C191132136C21693CE61A41B7F4F" },
+    { "path": "UnityPlayer.dll", "bytes": 30894512, "sha256": "515EAA5148B358CC119B1ECEE0F9D23DE60D21FFA6337C0B138D7A79D83D1D62" },
+    { "path": "GameAssembly.dll", "bytes": 47464960, "sha256": "25FEBBDE3B459D7A81B64A1EA8A8CF8321340B18E0AFA823BAB82C2A36398785" },
+    { "path": "Vampire Hunters_Data\\il2cpp_data\\Metadata\\global-metadata.dat", "bytes": 10889004, "sha256": "E8F040A9D5E24D701C3CFAB16DFC0B2564040F9C54582DF537FCB4513C796F7F" }
+  ]
+}

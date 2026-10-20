@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Settings.Tests'">
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)obj\Settings\</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)bin\Settings\</BaseOutputPath>
+  </PropertyGroup>
+</Project>

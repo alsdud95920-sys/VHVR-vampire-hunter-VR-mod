@@ -1,0 +1,68 @@
+# Stage 0 entry plan — NOT AUTHORIZED / NOT DEPLOYABLE
+Date: 2026-10-06 | Stage: prerequisites / 0 | Mode: agentic
+
+## Purpose and holds
+The agent prepares and tests this plan without touching the installed game. The user's request to continue autonomously means do agent-owned research/build/test/commit without repeating intake, not silently approve previously excluded installation, game execution, account/Steam settings changes, save interpretation or stock overwrite. Hard gates D-017 remain.
+Required before deployment: version-retention decision, policy/risk acceptance and a supported means of avoiding online score submission, separate installation/launch consent, and an approved entry point combining fresh pinned preflight with the tested transaction engine. The current planner has no copy/delete/launch/settings operation. Its `VERIFIED_PLAN_ONLY_NOT_DEPLOYABLE` means evidence is internally consistent, not permission to install. Transaction code preparation does NOT wait for those decisions (D-023); no real target invocation performed.
+
+## Supported build and retention
+- Recorded Steam app 2206270, build **22267731**, depot 2206271 manifest **3974471454289775655**, Unity **2022.3.37f1**, IL2CPP metadata 31.
+- `<RepoRoot>\config\supported-build.json` fixes four core/metadata sizes and SHA256 independently of regenerated recon. The planner checks the installed app/build and all four hashes before and after planning, and compares **every stock install file/path/directory/timestamp** against the pinned existing backup manifest. It does not read save payloads or create another backup.
+- Live third-party public appinfo snapshot matches installed build/depot. Only `public` was exposed; `privatebranches=1` means other branches can exist but are not visible/available without authorization. No password guessing/access-token use. This is not an exhaustive view of the user's supported Game Versions & Betas UI.
+- Valve documents **Library → Properties → Game Versions & Betas** for user branch selection. Selecting a branch immediately replaces installed content; developers can later update that branch. No branch switching/settings changes performed.
+- Local appmanifest still reports `AutoUpdateBehavior=0`, StateFlags 4, TargetBuildID 22267731. **Update-on-launch is not a complete version pin.** No Steam manifest modification/read-only flag/ACL tricks/firewall/DRM removal/depot downgrade.
+- A byte/build mismatch must stop entry planning/deployment until a fresh research and test cycle. An exact-build guard detects updates; it does **not prevent Steam updates**, protect against a direct Steam launch after installation, or complete the Wizard version-pin prerequisite. Accepting guarded current-build development instead of fixed retention requires a **future explicit decision** recording its cost; D-022 currently retains the hold, not an accepted fallback.
+
+Sources checked 2026-10-06:
+- https://partner.steamgames.com/doc/store/application/branches
+- https://api.steamcmd.net/v1/info/2206270 (third-party public metadata, not official policy)
+- https://help.steampowered.com/en/faqs/view/71AB-698D-57EB-178C (title available; body not usable, no update-setting claim inferred)
+
+## Policy and online risk assessment
+- Game-specific endpoint https://store.steampowered.com/eula/2206270_eula_0 still says **There was an error loading the content of this EULA.** It is not a readable agreement or evidence of permission.
+- Official https://gamecraftstudios.com/ supplies **contact@gamecraftstudios.com**, no retrieved modding license/policy.
+- Gamecraft Studios **[developer]**, 2024-11-07: “It's not in our immediate plans but mod support is something we can definitely consider for the future. **Your best score will be registered in the leaderboard.** We can also think about a leaderboard 'off' mode.” https://steamcommunity.com/app/2206270/discussions/0/4638238419731877731/
+- Gamecraft Studios **[developer]**, 2025-08-19: “It's a possibility, but it's not in our current short-term plans.” https://steamcommunity.com/app/2206270/discussions/0/608668448981105963/
+- These are historical support-plan statements, **not a mod license or proof a current leaderboard-off mode exists**. Community guesses are not developer permission.
+- Steam Subscriber Agreement https://store.steampowered.com/subscriber_agreement/ reviewed, revision 2026-09-10. Section 2.G restricts reverse engineering/modification absent permitted terms, written consent or applicable-law exceptions. Section 4.B prohibits cheats, protection interference and unauthorized process tampering. Personal-use wording is not blanket mod authorization. This is a risk summary, not legal advice or a game-specific prohibition ruling.
+- Store is single-player **with leaderboards/Steam Cloud**. Public launch metadata lists the normal game EXE; complete backed-up install filenames had no obvious Easy Anti-Cheat/BattlEye/anti-cheat/EULA markers. **Absence of filenames/store labels is not proof of no protection.** No protected process has been launched/inspected. Stop if any route requires defeating, disabling or evading anti-cheat/DRM.
+- Injecting into a protected process or submitting altered scores can risk account bans. Recommend only single-player/offline where officially supported. **Steam offline mode alone does not establish no later score upload or Cloud sync.** Do not patch Steamworks/leaderboard APIs, manipulate scores/accounts or change global network/Steam/Cloud settings to manufacture isolation. First authorized diagnostic launch should stay at menus with no scored run; future gameplay remains blocked until supported isolation is confirmed.
+
+## Existing exact-game VR work
+Live GitHub exact-game VR repository query returned 0; Google search only returned its access interstitial; community “Modding?” thread is a user's 2024 lack-of-knowledge claim. **No finished exact-game VR mod confirmed, not proof none exists.** D-003 framework/license evaluation remains required before renderer work; no GPL code imported or from-scratch rendering started.
+
+## Proposed owned files — read-only evidence
+`<RepoRoot>\tests\preflight-entry.ps1`:
+1. Require supported app/build/core hashes, game stopped, pinned backup manifest SHA256 and all-stock inventory match.
+2. Require pinned BepInEx ZIP bytes/SHA256 from DEPENDENCIES.json. Read every ZIP entry, reject unsafe/duplicate/case-alias/symlink paths, compare every extracted file against ZIP bytes; no extraction or target writes.
+3. Hash the freshly built diagnostic DLL. Build a proposed owned-file list: **228** loader ZIP files plus **1** diagnostic DLL, expected **229** proposed files.
+4. Refuse any existing `BepInEx`, `dotnet`, `winhttp.dll`, `doorstop_config.ini`, `.doorstop_version`, `changelog.txt` root. No merge/overwrite of stock or another mod.
+5. Save plan/hashes only to local ignored `<RepoRoot>\artifacts\entry-preflight.json`. Keep proprietary/raw save/backup/interop evidence out of Git/dist. A changed compiled DLL invalidates its older plan hash.
+
+Official IL2CPP instructions https://docs.bepinex.dev/master/articles/user_guide/installation/unity_il2cpp.html require root extraction and first run generating BepInEx/config and LogOutput.txt. Unmodified Doorstop proxy is the loader's entry method, not an official game API. The pinned INI enables the loader with `BepInEx\core\BepInEx.Unity.IL2CPP.dll`, `dotnet\coreclr.dll`, output redirection off, and disable switch respected. First-run interop behavior/network requirements and current-build compatibility remain unverified; do not bypass protection to fix them.
+
+Automatic validation completed: entry fixtures 21/21, backup 12/12, recon 23/23 and full verifier exit 0/nine expected child exits; both builds zero warnings/errors. Local plan completion 2026-10-06T11:01:58.7938014Z. Eight test-script ASTs and Git diff checks pass. See `<RepoRoot>\docs\VERIFICATION.md` for failed-attempt/tooling recovery and final evidence; no deployment/runtime permission or Stage 0 pass implied.
+
+## Reversible deployment / recovery mechanics (synthetic engine implemented; real integration pending)
+1. Implement and fixture-test a no-overwrite transaction **before** authorized deployment. Fresh plan and separate local journal record originals and copied file hashes; reject partial/foreign prior installation and game process races. No launch while incomplete.
+2. Copy only plan-owned files; write durable progress before/after each operation; verify exact copied bytes. Do not modify EXE/GameAssembly/UnityPlayer/metadata/boot config or any save.
+3. Capture newly generated loader content in previously absent owned roots, including config/log/interop. Observe actual first-run writes; do not assume all outputs. Unexpected writes outside owned roots halt testing and require review; no automatic stock/save overwrite.
+4. First diagnostic launch: supported, explicitly approved game entry, menu only, no score/Steam settings manipulation. Capture logs/visible evidence without a headset. No unattended gameplay/achievement/reward automation.
+5. Config reload/invalid-config/safe-mode pure layer now validates only the two bool entries with deterministic true defaults and content fingerprint. Existing malformed config is preserved; `BepInEx\config\local.vampirehuntersvr.stage0.cfg.safe-mode` forces effective safe mode. A visible Unity label and runtime verification remain unfinished. The DLL has logs only; no camera/renderer/input hooks and no VR smoke pass.
+6. On quit and process exit, preserve relevant logs in local reports. Remove only journal-owned unmodified root files. Previously absent BepInEx/dotnet directories should be moved **without overwrite** into project-local quarantine rather than recursively deleting possibly unknown generated content; verify stock path/hash/timestamps. Changed/foreign files halt cleanup for review.
+7. Stock restoration via this route means removing only additions, **not copying backed-up game/save data into original folders**. Any stock-byte discrepancy needs separate restore approval. Relaunch stock only with launch consent and verify no loader/visible label. Human feedback still required for Stage 0 pass/tag; no Stage 1 implementation beforehand.
+
+Engine `<RepoRoot>\src\core\EntryTransaction.ps1` is callable library code, not an authorized deployment command. Caller supplies canonical absolute target, trusted stock inventory, allowlisted payload Paths/Bytes/SHA256/absolute Source, absent disjoint same-volume workspace and explicit guard; future real wrapper must pin preflight/policy/consent independently. Named mutex serializes this tool in the same Windows session only, not Steam/external launch. All payload is staged/hashed before first root publication; intent/result journal flushed at each root move. On failure, no automatic launch or destructive rollback; explicit recovery validates all roots first and moves only evidenced additions to quarantine. Torn/invalid journal, conflicting roots, changed/missing payload or stock halt for review. Generated content in successfully installed absent-owned roots is inventoried/preserved; generated data after an incomplete publication is treated as ambiguous. Recovery replay verifies moved content, retains all journal/staging/quarantine evidence and never copies stock/save backup into original paths. Physical power-loss/directory-entry durability and external-launch exclusion are not guaranteed; no real loader first-run/recovery compatibility claim.
+Configuration boundary: BepInEx constructs/reads ConfigFile in BasePlugin before this plugin's Load; the bounded pure reader does not protect that loader constructor or prove malformed startup safety. Actual load/invalid-config/timer/unload checks remain required. Marker forces effective safe mode in the diagnostic, not Doorstop bypass or a proven XR-failure fallback; this build contains no XR. Journal is trusted local recovery evidence, not authenticated against malicious edits.
+Latest preparation verification: transaction **27/27**, pure settings **18/18**, backup **12/12**, entry **21/21**, recon **23/23**, full wrapper0/11 expected children and exact suite identity verified. Plan completion 2026-10-06T11:16:44.6616735Z; new DLL SHA256 7D705CED852B0093996BB11078607AF243EFB9A70674B7E6B32BAE0DEAD01695, still 229 proposed additions/121 stock unchanged. Ten AST/diff checks pass; failed/false-positive attempts documented in VERIFICATION.md, not counted as successful runtime evidence.
+
+## Optional policy inquiry draft — NOT SENT
+Recipient: contact@gamecraftstudios.com
+Subject: Vampire Hunters — local single-player VR accessibility/conversion mod policy
+
+Hello Gamecraft Studios,
+I would like to develop a local, non-commercial VR conversion for my legitimately purchased Steam copy of Vampire Hunters (app 2206270). It would preserve the game's movement/combat and 14-weapon system, use an unmodified Unity IL2CPP community loader, and would not redistribute any game assets, bypass DRM/anti-cheat, manipulate achievements/scores/accounts, or be used in online competitive runs.
+Could you clarify whether this kind of local mod is permitted under your current EULA, whether a supported fixed-version branch is available, whether this PC build uses any anti-cheat/protected execution, and whether there is a supported way to disable leaderboard submissions including deferred uploads after reconnecting?
+Thank you.
+
+The agent has not sent email or posted through the user's identity. The user may elect to send this inquiry; research/build/tests can proceed without that choice while installation/runtime holds remain.

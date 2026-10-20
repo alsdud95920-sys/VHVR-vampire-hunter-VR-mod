@@ -1,0 +1,168 @@
+{
+  "status": "DESIGNED_NOT_IMPLEMENTED",
+  "runtimeVerification": "PENDING_STAGE3_XR_SESSION",
+  "designDoc": "docs/INPUT-MAP.md",
+  "decision": "D-050",
+  "amendedBy": "D-059",
+  "keymapRevision": "D-057 (user request 2026-10-07, the current map): (1) 보조사격 IS 보조발사 IS THE FLAT RMB SECONDARY FIRE - the user settled the terminology question ('보조사격은 평면 RMB 대체사격임, 한국어 번역본에는 보조발사라 되어있다. 앞으로 보조발사라 부르도록'), so the action the upper face button + trigger drives is renamed fire_aux_1/fire_aux_2 -> fire_secondary_off/fire_secondary_dominant, the parked fire_secondary action is merged into them (same thing under the old name; the game's own API is fire_secondary_shot(EWeaponSlot), D-051), and the split vocabulary is now secondary_fire/main_fire. Q-029 is ANSWERED: 보조발사 = RMB alt-fire, not the Q/E weapon - aux_weapon_1/aux_weapon_2 stay untouched as the game's own 보조무기 keys (Q/E on the stick presses). (2) THE GRIP ASSIGNMENT IS DELETED ('그립버튼에 키 할당은 없애고'): the grip action, gate: 'grip' on both main fires, tuning.gripFireMode and both squeeze bindings are gone, so the trigger ALONE fires that hand's main weapon, and both squeezes are deliberately unbound (see deliberatelyUnbound; the validator fails if anything binds input/squeeze/value again). This answers Q-031 in the user's direction: no gate. (3) INTERACT ('오른쪽 스틱을 위로 올리면 상호작용 키'): new required action interact = the dominant (right) stick PUSHED UP, read through tuning.interactFromRightStickUp (positive direction, engage/release re-arm). It shares the right stick Y axis with blood_ability, whose PULLED-DOWN half keeps the negative direction, so the pair is declared as an axisDirection split - the old duplicate-control rule needs a named split before one component can carry two actions. Which flat key the interact verb is remains unknown (Q-034). (4) SNAP TURN ('오른쪽 스틱 좌, 우는 30도씩 스냅턴'): turn keeps its dominant thumbstick/x binding but is now an explicit 30-degree snap turn, thresholds and re-arm in tuning.snapTurnFromRightStickX; analog smooth turn is gone (Q-015/D-013 already said snap-only). Nothing here is implemented or bound.",
+  "flatMenuEvidence": {
+    "decision": "D-058",
+    "source": "The game's OWN keybinding screen (키 바인딩 - 키보드 및 마우스 전용), Korean build, supplied by the user as a screenshot 2026-10-07; corroborated by the already-recorded PlayerInputController member list (D-031: Move/Look/Fire/Fire2/Reload/Jump/BloodyRush/SpecialAbility/Run/Interact/ArmL/ArmR/Start/Select). This is 1st-party game data, so it SUPERSEDES the 'no interact key observed' reading in keymapRevision and the v4 probe's incomplete key list.",
+    "listIsScrollable": "The screen scrolls, so rows above/below this window (further movement keys, start/select) were not visible; this records what the visible window shows, not a claim of the complete list.",
+    "rows": [
+      {"korean": "오른쪽으로 이동", "action": "move (right)", "primary": "D", "secondary": "RIGHT"},
+      {"korean": "발사", "action": "fire_primary", "primary": "LMB", "secondary": "X"},
+      {"korean": "점프", "action": "jump", "primary": "SPACE", "secondary": "SCROLL UP"},
+      {"korean": "상호작용", "action": "interact", "primary": "Z", "secondary": "G"},
+      {"korean": "재장전", "action": "reload (the flat key's own name; the VR actions are the per-hand reload_off/reload_dominant - D-059)", "primary": "R", "secondary": "V"},
+      {"korean": "혈능력", "action": "blood_ability", "primary": "F", "secondary": "C"},
+      {"korean": "특수 능력", "action": "special_ability (NOT a separate VR action - the character's own ability; the SCOUT's IS the mod's dash, which stays on the left X button - Q-035 answered/closed, D-059)", "primary": "SHIFT", "secondary": "CTRL"},
+      {"korean": "왼쪽 로봇 팔", "action": "aux_weapon_1", "primary": "Q", "secondary": "FORWARD"},
+      {"korean": "오른쪽 로봇 팔", "action": "aux_weapon_2", "primary": "E", "secondary": "BACK"},
+      {"korean": "보조 발사", "action": "fire_secondary_off / fire_secondary_dominant", "primary": "RMB", "secondary": "CTRL"},
+      {"korean": "수동 레벨 업", "action": "manual_level_up (NOT MAPPED - Q-036)", "primary": "T", "secondary": "L"}
+    ],
+    "settles": "Q-034: the game HAS an interact verb - **상호작용 = Z (main) / G (alt)**, matching PlayerInputController.Interact. Also confirms 보조발사 = RMB (Q-029/D-057), 발사 = LMB, 점프 = SPACE, 혈능력 = F, Q/E = left/right robot arm (ArmL/ArmR), and 재장전 = R (which REFUTES the old 'r might be interact' guess).",
+    "reveals": "Two game actions the map does not carry yet: 특수 능력 (Special ability, SHIFT - PlayerInputController.SpecialAbility) and 수동 레벨 업 (Manual level up, T). Both are open questions (Q-035, Q-036) and are NOT mapped, bound or invented until the user decides.",
+    "notChanged": "Nothing about the VR mapping moves because of this evidence: it is flat parity data. The action list, the controller tables and every D-057 pin stand as written."
+  },
+  "reloadDesign": {
+    "decision": "D-059",
+    "userRequest": "2026-10-07: '장전은 왼손 y버튼 두번누르면 왼손 장전 오른손은 b버튼 두번 누르면 장전으로 만들 수 있겠어? 아마 게임 코드를 수정해야 할지도 몰라.' - per-hand reload on a DOUBLE TAP of that hand's upper face button; the same message also pins dash to the X key ('키 바인딩은 그대로 x키로 둬'), which needs no change because D-056 already put it there.",
+    "evidenceStatus": "STATIC_ASSEMBLY_SHAPE_NOT_RUNTIME_MAPPED",
+    "gameApi": ["Weapon.reload() : void () [public virtual]", "Weapon.force_reload(int) : void (int) [public virtual]", "Weapon.instant_reload(float, bool) : void (float, bool) [public virtual]", "SecondaryWeapon.force_reload(int) overrides the same signature", "PlayerController.reload_all_weapons() : void () - the path the game's own R key takes", "PlayerInputController.reloadPressed / ReloadInput(bool) - the input plumbing behind R"],
+    "source": "artifacts/recon-asm/full/assembly-recon.json (the all-type member dump of tools/interop/Assembly-CSharp.dll, sha256 0494F1BA5514BBBE9632A328A20565E53554C312447E7F8380F5ECE9B927EED5), re-derived by the assembly-aim-slot-pin check on every verifier run",
+    "proves": "The game does reloading PER WEAPON OBJECT and every Weapon exposes its own public virtual reload(), so the mod can reload one hand's weapon without touching the other. Per-hand reload therefore does NOT need an edit to the game's code - it needs a call to the game's own API, exactly the same shape as the per-slot fire API in aimDesign.handSlotEvidence (D-051).",
+    "doesNotProve": "That a given weapon object is the hand's active slot weapon at that moment, what the int parameter of force_reload actually selects, whether the weapon must be idle or not already reloading, or that the game's own state machine accepts anything except PlayerController.reload_all_weapons(). Those are Stage 6B questions - Q-037.",
+    "fallback": "If a per-hand weapon reload cannot be proven in the headset, the double tap forwards to the game's own single 재장전 (PlayerController.reload_all_weapons(), the R key's path) and that downgrade is recorded in D-059 and Q-037 - never shipped silently."
+  },
+  "tokenSyntax": "Component paths may use tokens: $face_primary, $face_secondary, $menu, $system. A token resolves through handProfiles for the physical hand that its role maps to. $system is reserved by the runtime and must never be bound to an action.",
+  "handedness": {
+    "supported": ["right"],
+    "default": "right",
+    "decision": "D-051",
+    "roles": ["dominant", "off"],
+    "rolesByHand": {"dominant": "right", "off": "left"},
+    "note": "Right-handed only, by explicit user decision (2026-10-07: '왼손잡이는 고려하지 않는다'). The roles therefore resolve to fixed physical hands: no UserDominantHand swap, no per-handedness variant and no carrier-token indirection ($menu is always the left hand). Re-adding left-handed play is a scope decision that needs a roles-by-handedness table plus both columns proven again on the headset - it is not a config toggle."
+  },
+  "handProfiles": {
+    "left": {"$face_primary": "input/x/click", "$face_secondary": "input/y/click", "$menu": "input/menu/click", "note": "Legacy Touch: the left hand carries X/Y and menu and is always the 'off' role in this design."},
+    "right": {"$face_primary": "input/a/click", "$face_secondary": "input/b/click", "$system": "input/system/click", "note": "Legacy Touch: the right hand carries A/B and system and is always the 'dominant' role in this design. input/system/click stays reserved and is never bound."}
+  },
+  "actions": {
+    "move": {"kind": "vector2", "hand": "off", "flatParity": "WASD - D-058: the game's own menu shows 오른쪽으로 이동 = D (a WASD family)", "required": true},
+    "turn": {"kind": "axis", "hand": "dominant", "flatParity": "mouse-X; snap turn only per Q-015/D-013", "required": true, "turnMode": "snap", "snapDegrees": 30, "note": "D-057 (user request, '오른쪽 스틱 좌, 우는 30도씩 스냅턴'): the dominant (right) stick's X axis is a SNAP turn of 30 degrees per crossover, not an analog rate. The mod reads the axis against tuning.snapTurnFromRightStickX (engage 0.7 / release 0.3, both directions named) and applies exactly one step per crossing, so a stick held at the edge cannot spin the player the way a smooth turn would. Q-015/D-013 already fixed snap-only turning (no smooth turn, no anti-nausea overlay); D-057 fixes the increment and the direction pair. The flat game's own mouse-X look must be suppressed while snap turn is active, and the step size belongs in the Stage 9 comfort section."},
+    "jump": {"kind": "digital", "hand": "dominant", "flatParity": "점프 / Jump = SPACE (main) / SCROLL UP (alt), confirmed from the game's own keybinding menu (D-058); 764 frames observed", "required": true, "note": "D-056 (user request): jump is the dominant (right) hand's LOWER face button - A on a Quest Touch controller (A/X are the lower buttons, B/Y the upper ones). It left the left hand, whose lower button now carries dash. The right thumb leaves the turn stick for the press, and a double tap still maps onto the game's own double jump."},
+    "dash": {"kind": "digital", "hand": "off", "flatParity": "특수 능력 / Special ability = SHIFT (main) / CTRL (alt) - ANSWERED 2026-10-07 (D-059): the user reports the SCOUT character's special ability IS the dash, so SHIFT is what this action forwards to and it stays on the left X button ('키 바인딩은 그대로 x키로 둬'). Other characters may carry a different 특수 능력; the mod forwards to the game's own key and lets the game decide, so nothing is re-bound per character. Q-035 closed.", "required": true, "note": "D-056 (user request): dash is the off (left) hand's LOWER face button - X on a Quest Touch controller - so it is a real button and needs no threshold or re-arm. This supersedes the D-055 right-stick-up dash: the right stick's Y axis now carries only the blood ability (pulled down, tuning.bloodAbilityFromRightStickDown). The dash's direction still comes from the left stick the player is already moving with, not from the dash control."},
+    "fire_primary": {"kind": "analog", "hand": "dominant", "flatParity": "발사 / Fire = LMB (the game's own keybinding menu, D-058); 23608 frames/77 presses", "required": true, "note": "D-057: the dominant (right) hand's MAIN weapon - the RIGHT_HAND slot under M1 - and it now fires on the trigger ALONE. The D-056 gate: 'grip' is deleted because the user removed the grip assignment ('그립버튼에 키 할당은 없애고'), which answers Q-031 in their direction: there is no gate and no dead trigger. Holding the UPPER face button (B) on the same hand fires 보조발사 (fire_secondary_dominant, the flat RMB alt-fire) instead, and the mode is latched per press. In flat play the same button is the primary-fire button."},
+    "fire_left_hand": {"kind": "analog", "hand": "off", "flatParity": "none in flat play - VR-only: the left hand's own weapon under M1", "required": true, "note": "D-057: the off (left) hand's MAIN weapon (LEFT_HAND slot, EWeaponSlot/D-051), fired on the trigger ALONE - the D-056 grip gate is deleted with the grip assignment (Q-031 answered). Holding Y (the UPPER face button) on the same hand fires 보조발사 instead - see gestures.secondary_fire_mode_off."},
+    "fire_secondary_off": {"kind": "analog", "hand": "off", "flatParity": "보조 발사 / secondary fire = RMB (main) / CTRL (alt) - the game's own keybinding menu confirms RMB (D-058); 1466 frames/13 presses - which slot it touches is unconfirmed (Stage 6B item 10b)", "required": true, "modifier": "secondary_modifier", "note": "D-057 (user request, '왼쪽은 Y키+LT'): the left hand's 보조발사 fires on the left trigger WHILE the upper face button (Y) is held. Renamed from fire_aux_1 because the user confirmed what this action IS: the flat RMB secondary fire (보조발사), not the Q/E auxiliary weapon (보조무기, which stays aux_weapon_1). Q-029 is answered, so the parked fire_secondary action is merged into this pair instead of staying a third, unbound name for the same thing. The game-side call is expected to be PlayerController.fire_secondary_shot(EWeaponSlot) - the API exists (D-051) - but WHICH slot a 보조발사 touches is still Stage 6B item 10b."},
+    "fire_secondary_dominant": {"kind": "analog", "hand": "dominant", "flatParity": "보조 발사 / secondary fire = RMB (main) / CTRL (alt) - the game's own keybinding menu confirms RMB (D-058); 1466 frames/13 presses", "required": true, "modifier": "secondary_modifier", "note": "D-057 (user request, '오른쪽은 B키+RT'): the right hand's 보조발사 fires on the right trigger WHILE the upper face button (B) is held. Same rename and same caveat as fire_secondary_off. Holding B is the explicit choice, so it wins over nothing else - there is no longer a gate to compete with, but the mode is still latched per press so pressing or releasing B mid-burst cannot fire by itself."},
+    "aux_weapon_1": {"kind": "digital", "hand": "off", "flatParity": "Q (82 frames); the game's own menu labels Q 왼쪽 로봇 팔 (left robot arm, PlayerInputController.ArmL) - D-058", "required": true, "note": "D-056 (user request): Q sits on the off (left) stick press, which frees the left UPPER face button (Y) to select 보조발사 (secondary_modifier). It is the game's own 보조무기 key and the mod must not silently drop it; a 1.0 s hold on the same press is the bug report (gestures.mod_bug_report). D-057 confirmed it is a DIFFERENT thing from 보조발사: Q/E are the auxiliary-weapon keys, the RMB alt-fire is what the upper face button + trigger drives (Q-029 answered)."},
+    "aux_weapon_2": {"kind": "digital", "hand": "dominant", "flatParity": "E (68 frames); the game's own menu labels E 오른쪽 로봇 팔 (right robot arm, PlayerInputController.ArmR) - D-058", "required": true, "note": "D-056 (user request): E sits on the dominant (right) stick press, which frees B to select that hand's 보조발사 (secondary_modifier). Same reasoning as aux_weapon_1."},
+    "blood_ability": {"kind": "digital", "hand": "dominant", "flatParity": "혈능력 / Blood ability = F (main) / C (alt), from the game's own keybinding menu (D-058); the v4 probe never recorded a press, so the menu is the better source", "required": true, "fromAxis": "input/thumbstick/y", "fromAxisDirection": "negative", "note": "D-056 (user request): the blood ability is the dominant (right) stick PULLED DOWN, so it is a discrete action read from an analog axis: tuning.bloodAbilityFromRightStickDown (engage -0.7, release -0.3). D-057 adds that the SAME axis carries interact on its positive half, declared as the axisDirection split gestures.right_stick_y_axis_split, so the two thresholds must not overlap and the validator pins both signs. Whether a pull-down while turning feels clean is Stage 3 feel work; the sign flip, if any, is exactly two numbers."},
+    "interact": {"kind": "digital", "hand": "dominant", "flatParity": "상호작용 / Interact = Z (main) / G (alt) - the game's own keybinding menu, matching PlayerInputController.Interact; Q-034 ANSWERED 2026-10-07 (D-058)", "required": true, "fromAxis": "input/thumbstick/y", "fromAxisDirection": "positive", "note": "D-057 (user request, '오른쪽 스틱을 위로 올리면 상호작용 키'): the interaction verb is the dominant (right) stick PUSHED UP, read through tuning.interactFromRightStickUp (positive direction, engage 0.7 / release 0.3). Like the ability it is a discrete action on an analog axis and needs a threshold plus a re-arm, or a stick resting forward would interact repeatedly. This is a NEW action in the map: manifest.interactables is still [], so nothing in the game has been shown to be interactable yet - but the FLAT KEY it forwards to is now known (Z, Q-034 answered by D-058), which was the last unknown about this action's flat parity. A negative Stage 6B finding stays a bug entry, not a silent remap."},
+    "mod_bug_report": {"kind": "digital", "hand": "off", "flatParity": "none", "required": true, "note": "D-056: a 1.0 s HOLD on the LEFT stick press (Q is a tap on the same press - gestures.mod_bug_report), because the left upper face button selects 보조발사 (secondary_modifier) and cannot carry a hold. Still the only home for the in-VR bug trigger (Q-033)."},
+    "mod_menu": {"kind": "digital", "hand": "off", "flatParity": "esc", "required": true},
+    "secondary_modifier": {"kind": "digital", "hand": "both", "flatParity": "none (VR-only)", "required": true, "role": "modifier", "note": "D-057 (renamed from aux_modifier - the user's word for the action is 보조발사, so the selector is named after the fire it selects): the UPPER face button of each hand - Y on the left, B on the right - held together with that hand's trigger fires that hand's 보조발사 (fire_secondary_off / fire_secondary_dominant). It is a modifier, not an action on the game: the mod reads the button and the trigger and decides which fire to send, so no OpenXR combination binding exists for this. There is no gate competing with it any more (the grip assignment was deleted the same day), and the mode is latched per press so pressing or releasing it mid-burst cannot fire by itself."},
+    "reload_off": {"kind": "digital", "hand": "off", "flatParity": "재장전 / Reload = R (main) / V (alt) - the game's own menu shows ONE reload key (D-058), so the left/right split is the MOD's own per-weapon call, not a flat input: Weapon.reload() on the left hand's weapon (D-059 assembly evidence). Per-hand reload is unproven at runtime - Q-037.", "required": true, "note": "D-059 (user request 2026-10-07, '장전은 왼손 y버튼 두번누르면 왼손 장전'): the off (left) hand's weapon reloads on a DOUBLE TAP of the left UPPER face button (Y) - the same button that selects 보조발사 while HELD, so it now carries three meanings: held + trigger = 보조발사, a single tap = nothing, a double tap = reload THIS hand. The split is data (gestures.reload_double_tap_off, and 'doubleTap' is a gesture kind the validator has always allowed), the two taps must come from one hand, and the mod must suppress the gesture while that hand's trigger is pressed so a tap belonging to the fire selector can never reload. The game's own R reloads every weapon (PlayerController.reload_all_weapons()); if the per-weapon call cannot be proven, that is the recorded fallback (D-059), not a silent downgrade."},
+    "reload_dominant": {"kind": "digital", "hand": "dominant", "flatParity": "재장전 / Reload = R (main) / V (alt) - one flat key (D-058); the per-hand split is the mod's own call on the right hand's weapon (D-059), unproven at runtime - Q-037.", "required": true, "note": "D-059 (user request, '오른손은 b버튼 두번 누르면 장전'): the dominant (right) hand's weapon reloads on a DOUBLE TAP of the right UPPER face button (B), which stays the 보조발사 selector while held - the same three-way rule as the left hand, with the same one-hand and trigger-held suppression. Nothing about the D-057 fire split moves: this is a documented gesture split on the same control (gestures.reload_double_tap_dominant), not a second binding."},
+    "weapon_bank_select": {"kind": "digital", "hand": "off", "flatParity": "none", "required": false, "status": "RESERVED_PENDING_14_SLOT_DECISION"}
+  },
+  "tuning": {
+    "bloodAbilityFromRightStickDown": {"control": "input/thumbstick/y", "direction": "negative", "engage": -0.7, "release": -0.3, "note": "D-056: the blood ability is a digital action read from an analog axis (the right stick pulled down), so it needs both a threshold and a re-arm: it fires once when the axis passes engage and cannot fire again until the stick comes back up past release. engage must stay strictly below release, or a stick resting near the middle could repeat-fire. Sign: OpenXR reports thumbstick y as positive when the stick is pushed forward/up, so 'pulled down' is negative - if Stage 3 logs the opposite sign on this runtime, the two numbers flip and nothing else changes. Design values only: nothing reads them yet (no XR session)."},
+    "interactFromRightStickUp": {"control": "input/thumbstick/y", "direction": "positive", "engage": 0.7, "release": 0.3, "note": "D-057: interact is a digital action read from an analog axis (the right stick pushed up), so it needs a threshold plus a re-arm: it fires once when the axis passes engage and cannot fire again until the stick comes back down past release. engage must stay strictly above release or a stick resting forward would interact repeatedly. Sign: OpenXR reports thumbstick y as positive when the stick is pushed forward/up, so 'pushed up' is positive - if Stage 3 logs the opposite sign on this runtime, this entry and bloodAbilityFromRightStickDown swap signs together and nothing else changes. Design value only: nothing reads it yet (no XR session)."},
+    "snapTurnFromRightStickX": {"control": "input/thumbstick/x", "degrees": 30, "leftDirection": "negative", "rightDirection": "positive", "engage": 0.7, "release": 0.3, "note": "D-057 (user request, '오른쪽 스틱 좌, 우는 30도씩 스냅턴'): the right stick's X axis drives a 30-degree snap per crossover - one step when the axis passes engage, and the next step only after it comes back past release, so holding the stick at the edge cannot spin the player. Both signs are named (left = negative, right = positive) so the direction pair is data, not a branch in code. Sign check is Stage 3 item 4: pushing left must turn left. Nothing reads this yet."},
+    "reloadFromFaceDoubleTap": {"controlPair": {"off": "input/y/click", "dominant": "input/b/click"}, "windowSeconds": 0.30, "maxFirstTapSeconds": 0.20, "suppressWhenTriggerHeld": true, "sameHandOnly": true, "note": "D-059: the double tap that reloads a hand is read from that hand's UPPER face button - the same control that selects 보조발사 when held. windowSeconds is the maximum gap between the two taps and maxFirstTapSeconds the longest a tap may last to count as a tap; the two must satisfy maxFirstTapSeconds < windowSeconds, or a hold could be read as a tap pair. suppressWhenTriggerHeld: while that hand's trigger is pressed, taps are the fire selector's business and no reload may fire. sameHandOnly: the two taps must come from ONE hand - a left tap plus a right tap is two single taps, never a reload. Design values only: nothing reads them yet (no XR session)."}
+  },
+  "controlTables": {
+    "touch_like": {
+      "note": "Meta Touch shape (Quest 2/3/3S/Pro, Rift S), reached here through the legacy oculus/touch_controller profile.",
+      "off": {
+        "note": "D-057/D-059: locomotion (move), Q on the stick press (with the bug report on a 1.0 s hold of the same press), dash on the LOWER face button (X), the UPPER face button (Y) doing triple duty - HELD = the 보조발사 selector, a single tap = nothing, a DOUBLE TAP = reload this hand (D-059) - the main fire and the 보조발사 on the trigger, and the menu. Six controls are used; the squeeze is deliberately unbound (no grip assignment).",
+        "move": "input/thumbstick",
+        "aux_weapon_1": "input/thumbstick/click",
+        "mod_bug_report": "input/thumbstick/click",
+        "dash": "$face_primary",
+        "secondary_modifier": "$face_secondary",
+        "reload_off": "$face_secondary",
+        "fire_left_hand": "input/trigger/value",
+        "fire_secondary_off": "input/trigger/value",
+        "mod_menu": "$menu"
+      },
+      "dominant": {
+        "note": "D-057/D-059: the 30-degree snap turn on the stick X, interact on the stick PUSHED UP and the blood ability on it PULLED DOWN (one axis carrying two actions with two thresholds), E on the stick press, jump on the LOWER face button (A), the UPPER face button (B) doing triple duty - HELD = the 보조발사 selector, a single tap = nothing, a DOUBLE TAP = reload this hand (D-059) - the main fire and the 보조발사 on the trigger. Six controls are used; the squeeze is deliberately unbound.",
+        "turn": "input/thumbstick/x",
+        "interact": "input/thumbstick/y",
+        "blood_ability": "input/thumbstick/y",
+        "aux_weapon_2": "input/thumbstick/click",
+        "jump": "$face_primary",
+        "secondary_modifier": "$face_secondary",
+        "reload_dominant": "$face_secondary",
+        "fire_primary": "input/trigger/value",
+        "fire_secondary_dominant": "input/trigger/value"
+      },
+      "capacitiveToConfirm": ["input/thumbstick/touch", "input/trigger/touch", "input/thumbrest/touch"]
+    },
+    "simple": {
+      "coverage": "DEGRADED",
+      "note": "khr/simple_controller has select+menu only and no thumbstick, so locomotion cannot be mapped; the game's own desktop input must stay available instead. D-057: it has no upper face button and no squeeze either, so 보조발사 (the selector + trigger pair) cannot exist there and the stick-driven interact/ability/snap turn cannot either. What survives is the main weapon on select - which is now the whole gate-free fire path too - and the menu. Every missing action is listed in families.generic.notSupported rather than papered over.",
+      "off": {"fire_left_hand": "input/select/click", "mod_menu": "input/menu/click"},
+      "dominant": {"fire_primary": "input/select/click"}
+    }
+  },
+  "families": {
+    "oculus_touch": {
+      "profilePath": "/interaction_profiles/oculus/touch_controller",
+      "usedBy": "Quest 3 Touch Plus on this PC: the active runtime is VDXR 1.0.10.0 'VirtualDesktopXR (Bundled)', which ships no meta/ profile path.",
+      "verified": "STATIC_STRING_EVIDENCE_LOCAL_RUNTIME_ONLY",
+      "controlsRef": "touch_like",
+      "notSupported": []
+    },
+    "meta_touch_plus": {
+      "profilePath": "/interaction_profiles/meta/touch_controller_plus",
+      "usedBy": "Reserved for a runtime that exposes the Quest 3 profile (not the active one on this PC).",
+      "verified": "ABSENT_IN_LOCAL_RUNTIME_EXPECTED_ELSEWHERE",
+      "controlsRef": "touch_like",
+      "notSupported": []
+    },
+    "generic": {
+      "profilePath": "/interaction_profiles/khr/simple_controller",
+      "usedBy": "Last-resort fallback for an unrecognised controller.",
+      "verified": "STATIC_STRING_EVIDENCE_LOCAL_RUNTIME_ONLY",
+      "controlsRef": "simple",
+      "notSupported": ["move", "turn", "jump", "dash", "aux_weapon_1", "aux_weapon_2", "blood_ability", "interact", "secondary_modifier", "mod_bug_report", "fire_secondary_off", "fire_secondary_dominant", "reload_off", "reload_dominant"]
+    }
+  },
+  "gestures": {
+    "mod_bug_report": {"target": "mod_bug_report", "base": "aux_weapon_1", "control": "input/thumbstick/click", "hand": "off", "gesture": "hold", "seconds": 1.0, "note": "D-056: the left stick press carries Q (aux_weapon_1) on a tap, so a quick tap can never fire the bug trigger. It moved here from the left upper face button, which is now the auxiliary-fire selector (aux_modifier)."},
+    "secondary_fire_mode_off": {"target": "fire_secondary_off", "base": "fire_left_hand", "control": "input/trigger/value", "hand": "off", "gesture": "modifier", "modifier": "secondary_modifier", "modifierControl": "$face_secondary", "held": "secondary_fire", "released": "main_fire", "pressLatched": true, "note": "D-057 (renamed from the D-056 aux_fire_mode_off split; user request '왼쪽은 Y키+LT'): the left trigger carries two actions, split by the upper face button (Y). Y held = 보조발사 (the flat RMB alt-fire); Y not held = the main weapon, which now fires on the trigger alone because the D-057 rule deleted the grip gate. The mode is read at press time and latched until release, so pressing or releasing Y mid-burst cannot fire by itself."},
+    "secondary_fire_mode_dominant": {"target": "fire_secondary_dominant", "base": "fire_primary", "control": "input/trigger/value", "hand": "dominant", "gesture": "modifier", "modifier": "secondary_modifier", "modifierControl": "$face_secondary", "held": "secondary_fire", "released": "main_fire", "pressLatched": true, "note": "D-057 (renamed from the D-056 aux_fire_mode_dominant split; user request '오른쪽은 B키+RT'): the same split on the right hand, selected by B. The latch makes the choice stable for the whole press, and the selector is the only thing that can change it - there is no gate left to compete with."},
+    "right_stick_y_axis_split": {"target": "interact", "base": "blood_ability", "control": "input/thumbstick/y", "hand": "dominant", "gesture": "axisDirection", "directions": {"interact": "positive", "blood_ability": "negative"}, "note": "D-057 (user request, '오른쪽 스틱을 위로 올리면 상호작용 키' + the D-056 pull-down ability): the right stick's Y axis is split in two by DIRECTION, not by a modifier button - pushed up = interact (tuning.interactFromRightStickUp), pulled down = blood_ability (tuning.bloodAbilityFromRightStickDown). Both are declared so the validator's duplicate-control rule has a named split, and so the two thresholds, their signs and their re-arm points are pinned in data instead of living in a branch in code. The dead band between release (-0.3) and release (+0.3) is shared: neither action can fire while the stick is near centre."},
+    "reload_double_tap_off": {"target": "reload_off", "base": "secondary_modifier", "control": "$face_secondary", "hand": "off", "gesture": "doubleTap", "windowSeconds": 0.30, "maxFirstTapSeconds": 0.20, "suppressWhenTriggerHeld": true, "note": "D-059 (user request, '왼손 y버튼 두번누르면 왼손 장전'): the left UPPER face button (Y) is split by TAP COUNT - a single tap does nothing, a DOUBLE TAP reloads the left hand's weapon, and a HOLD is the 보조발사 selector (D-057). The validator has always accepted 'doubleTap' as a gesture kind (its duplicate-control rule exists for exactly 'tap vs hold / double tap'), so Y carrying both secondary_modifier and reload_off is a documented split, not new machinery. suppressWhenTriggerHeld is the safety rule: while that hand's trigger is pressed the tap stream belongs to the fire selector, so a reload can never come out of a burst. windowSeconds is the maximum gap between the two taps and maxFirstTapSeconds the longest a tap may last to count as a tap rather than a hold; both are design values until Stage 3 measures them."},
+    "reload_double_tap_dominant": {"target": "reload_dominant", "base": "secondary_modifier", "control": "$face_secondary", "hand": "dominant", "gesture": "doubleTap", "windowSeconds": 0.30, "maxFirstTapSeconds": 0.20, "suppressWhenTriggerHeld": true, "note": "D-059 (user request, '오른손은 b버튼 두번 누르면 장전'): the same tap-count split on the right UPPER face button (B), which stays the 보조발사 selector while held. One gesture per hand keeps the data honest about which hand's weapon is reloaded, and the timing windows plus the trigger-held suppression are identical on both sides."}
+  },
+  "deliberatelyUnbound": [
+    {"control": "input/squeeze/value", "hands": "both", "decision": "D-057", "reason": "The user deleted the grip assignment ('그립버튼에 키 할당은 없애고'), so neither squeeze carries an action any more: the D-056 gate: 'grip', the grip action itself and tuning.gripFireMode are all gone (Q-031 answered - the trigger alone fires). This is not a free control for a later edit to fill 'helpfully': the validator fails if any action binds input/squeeze/value, and giving the squeeze a verb again (grab, throw, physics hands, a new modifier) needs a new user decision and a new decision entry."},
+    {"control": "input/system/click", "hands": "right", "decision": "D-002/D-050 (runtime-reserved)", "reason": "The runtime reserves the system button; it may never be bound. It stays listed in manifest.inputDesign.reservedNotBindable so an edit cannot quietly use it."}
+  ],
+  "runtimeOverride": {
+    "decision": "D-114",
+    "status": "IMPLEMENTED_NOT_HEADSET_ACCEPTED",
+    "source": "src/interaction/HandInput.cs + AbilityStickPolicy in src/interaction/HandAim.cs",
+    "scope": "Current opt-in HandInput driver; supersedes the historical D-057/D-059 ergonomics in this file. This is a validated documentation mirror, not a runtime-loaded action map or general rebinding implementation. Other historical design entries are not runtime acceptance claims.",
+    "rightStickAbilities": {
+      "control": "input/thumbstick/y",
+      "hand": "dominant",
+      "blood_ability": {"direction": "positive", "engage": 0.7, "release": 0.3, "padButton": "North", "nativeInput": "BloodyRushInput"},
+      "dash": {"direction": "negative", "engage": -0.7, "release": -0.3, "padButton": "East", "nativeInput": "SpecialAbilityInput"},
+      "dominantAxisOnPress": true,
+      "releaseWhilePausedOrInactive": true
+    },
+    "interact": {"hand": "off", "control": "$face_primary", "padButton": "LeftStick", "note": "D-101 left X Interact retained; no ability remains on left X."}
+  },
+  "rebinding": {
+    "status": "NOT_IMPLEMENTED",
+    "rule": "Rebinding writes action -> component path per family; prompts and the controller diorama re-resolve from the action map, never from a static table (Stage 8/9)."
+  }
+}

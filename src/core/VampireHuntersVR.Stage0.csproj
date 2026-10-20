@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BepInExCore>$(MSBuildThisFileDirectory)..\..\tools\bepinex-be788\BepInEx\core</BepInExCore>
+    <Interop>$(MSBuildThisFileDirectory)..\..\tools\interop</Interop>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\render\StereoMath.cs" Link="StereoMath.cs" />
+    <Compile Include="..\render\RenderResolutionPolicy.cs" Link="RenderResolutionPolicy.cs" />
+    <Compile Include="..\render\PerfProfilePolicy.cs" Link="PerfProfilePolicy.cs" />
+    <Compile Include="..\render\MonitorCostProbePolicy.cs" Link="MonitorCostProbePolicy.cs" />
+    <Compile Include="..\interaction\HandAim.cs" Link="HandAim.cs" />
+    <Compile Include="..\interaction\HandPose.cs" Link="HandPose.cs" />
+    <Compile Include="..\interaction\HandRenderTiming.cs" Link="HandRenderTiming.cs" />
+    <Compile Include="..\interaction\BoundedDiagnosticWriter.cs" Link="BoundedDiagnosticWriter.cs" />
+    <Compile Include="..\interaction\HandAimDriver.cs" Link="HandAimDriver.cs" />
+    <Compile Include="..\interaction\HandAimDriverPoseTrace.cs" Link="HandAimDriverPoseTrace.cs" />
+    <Compile Include="..\interaction\HandPoseTrace.cs" Link="HandPoseTrace.cs" />
+    <Compile Include="..\interaction\HandReticle.cs" Link="HandReticle.cs" />
+    <Compile Include="..\interaction\HandFireTrigger.cs" Link="HandFireTrigger.cs" />
+    <Compile Include="..\interaction\WeaponRuntimeBridge.cs" Link="WeaponRuntimeBridge.cs" />
+    <Compile Include="..\interaction\HandUi.cs" Link="HandUi.cs" />
+    <Compile Include="..\interaction\HandMarkers.cs" Link="HandMarkers.cs" />
+    <Compile Include="..\interaction\HandInput.cs" Link="HandInput.cs" />
+    <Compile Include="..\interaction\VirtualPad.cs" Link="VirtualPad.cs" />
+    <Compile Include="..\interaction\HandShot.cs" Link="HandShot.cs" />
+    <Compile Include="..\interaction\HandShotFrames.cs" Link="HandShotFrames.cs" />
+    <Compile Include="..\interaction\HandShotDiagnostics.cs" Link="HandShotDiagnostics.cs" />
+    <Compile Include="..\interaction\WorldPoseScope.cs" Link="WorldPoseScope.cs" />
+    <Compile Include="..\interaction\FlameEndpointPatch.cs" Link="FlameEndpointPatch.cs" />
+    <Compile Include="..\interaction\FlameEndpointMemory.cs" Link="FlameEndpointMemory.cs" />
+    <Compile Include="..\interaction\HandFlameEndpoint.cs" Link="HandFlameEndpoint.cs" />
+    <Compile Include="..\interaction\FlameEmitterPin.cs" Link="FlameEmitterPin.cs" />
+    <Compile Include="..\interaction\HandFlameEmitter.cs" Link="HandFlameEmitter.cs" />
+    <Reference Include="0Harmony"><HintPath>$(BepInExCore)\0Harmony.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UI"><HintPath>$(Interop)\UnityEngine.UI.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="BepInEx.Core"><HintPath>$(BepInExCore)\BepInEx.Core.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="BepInEx.Unity.IL2CPP"><HintPath>$(BepInExCore)\BepInEx.Unity.IL2CPP.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Il2CppInterop.Runtime"><HintPath>$(BepInExCore)\Il2CppInterop.Runtime.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Il2CppInterop.Common"><HintPath>$(BepInExCore)\Il2CppInterop.Common.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Il2Cppmscorlib"><HintPath>$(Interop)\Il2Cppmscorlib.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Assembly-CSharp"><HintPath>$(Interop)\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Unity.InputSystem"><HintPath>$(Interop)\Unity.InputSystem.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(Interop)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.PhysicsModule"><HintPath>$(Interop)\UnityEngine.PhysicsModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.ParticleSystemModule"><HintPath>$(Interop)\UnityEngine.ParticleSystemModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.InputLegacyModule"><HintPath>$(Interop)\UnityEngine.InputLegacyModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UIModule"><HintPath>$(Interop)\UnityEngine.UIModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.IMGUIModule"><HintPath>$(Interop)\UnityEngine.IMGUIModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.XRModule"><HintPath>$(Interop)\UnityEngine.XRModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.VRModule"><HintPath>$(Interop)\UnityEngine.VRModule.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>
