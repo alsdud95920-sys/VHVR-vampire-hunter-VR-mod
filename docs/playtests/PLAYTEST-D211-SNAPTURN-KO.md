@@ -3,6 +3,14 @@
 > 목적: **오른쪽 스틱 좌/우 스냅 턴이 시야를 실제로 돌리는지**, 각도가 **30° / 45° / 끄기** 세 가지로 동작하는지, 그리고 **위치가 튀지 않고 전방 이동이 새 방향으로 함께 도는지** 확인한다(BUG-203 수정).
 > 소요: 게임 실행 3회(설정 3가지) 또는 1회 + 설정 변경 2회, 헤드셋 착용 약 5~8분. 준비물: 컨트롤러 2개.
 
+## 배포 기록 (2026-10-21, 이 PC)
+
+- 설치본: `F:\SteamLibrary\steamapps\common\Vampire Hunters`
+- 덮어쓴 파일: `BepInEx\plugins\VampireHuntersVR.Stage0.dll`(440,320 B, SHA-256 `129361927619F42C3A625D99EB85EB04B781DF981690C104D17FB4F35BE85F2F`), `VampireHuntersVR-0.9.5-rc1\VhvrSettings.*`(3택 UI), 같은 폴더의 `install.ps1` / `README-KO.md` / `SETTINGS-README-KO.md`
+- 백업: `F:\VRMods\backup\20261021T003925-d211-deploy` (같은 상대 경로로 되돌리면 rc1 상태 복구)
+- 안내문: 설치본 `VampireHuntersVR-0.9.5-rc1\UPDATE-D211-KO.txt`
+- 라이브 설정: `SnapTurnDegrees=30`, `HandPoseFrame=Head` (배포 전과 해시 동일, 손대지 않음)
+
 ## 준비 (헤드셋 없이, 1분)
 1. 게임을 끈다.
 2. 설치본 DLL이 방금 빌드한 것과 같은지 확인한다.
