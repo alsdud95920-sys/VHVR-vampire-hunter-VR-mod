@@ -231,6 +231,10 @@ internal static class Program
         HostConfigTool.ApplyFovScaleY(loaded, 0.80f);
         HostConfigTool.ApplyFovScaleX(loaded, 1.0f);
         HostConfigTool.ApplyFovScaleY(loaded, 1.0f);
+        // D-211: round-trip the three-choice snap turn 45 -> 30 so the keys check sees the shipped default again
+        // while still proving Apply/Read handle a real choice.
+        HostConfigTool.ApplySnapTurnDegrees(loaded, 45f);
+        HostConfigTool.ApplySnapTurnDegrees(loaded, HostConfigTool.DefaultSnapTurnDegrees);
         string backup = HostConfigTool.Save(path, loaded);
         JsonObject written = HostConfigTool.Load(path);
         PictureSize readBack = HostConfigTool.Read(written);
@@ -242,12 +246,15 @@ internal static class Program
             written["Anisotropic"]?.GetValue<bool>() == false && HostConfigTool.ReadAnisotropic(written) == HostConfigTool.DefaultAnisotropic &&
             // D-186-FovScale: the shipped default (1.0) lands back on both axes after the 0.85/0.80 -> 1.0
             // round-trip, and the legacy single FovScale key was retired by ApplyFovScaleX.
-            HostConfigTool.ReadFovScaleX(written) == 1.0f && HostConfigTool.ReadFovScaleY(written) == 1.0f && written["FovScale"] == null;
+            HostConfigTool.ReadFovScaleX(written) == 1.0f && HostConfigTool.ReadFovScaleY(written) == 1.0f && written["FovScale"] == null &&
+            // D-211: the snap-turn key lands on the shipped 30 after the 45 -> 30 round-trip.
+            HostConfigTool.ReadSnapTurnDegrees(written) == HostConfigTool.DefaultSnapTurnDegrees;
         Write("SELFTEST " + (keys ? "PASS" : "FAIL") + " " + readBack.Preview + " uiscale=" + HostConfigTool.ReadUiScale(written) +
             " msaa=" + HostConfigTool.ReadEyeMsaa(written) + " aniso=" + (HostConfigTool.ReadAnisotropic(written) is bool ra ? (ra ? "16x" : "off") : "(absent)") +
             " fovX=" + (HostConfigTool.ReadFovScaleX(written) is float rfx ? rfx.ToString("0.00", CultureInfo.InvariantCulture) : "(absent)") +
             " fovY=" + (HostConfigTool.ReadFovScaleY(written) is float rfy ? rfy.ToString("0.00", CultureInfo.InvariantCulture) : "(absent)") +
             " legacy=" + (written["FovScale"] == null ? "retired" : "kept") +
+            " snap=" + (HostConfigTool.ReadSnapTurnDegrees(written) is float rs ? rs.ToString("0.#", CultureInfo.InvariantCulture) : "(absent)") +
             " backup=" + File.Exists(backup));
         return keys ? Ok : Failed;
     }

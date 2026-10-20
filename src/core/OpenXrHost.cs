@@ -1,4 +1,4 @@
-﻿// Recovered 2026-10-14 (D-178) from the shipped VampireHuntersVR.Stage0.dll (D-171) with ilspycmd: OpenXrHost.cs
+﻿﻿// Recovered 2026-10-14 (D-178) from the shipped VampireHuntersVR.Stage0.dll (D-171) with ilspycmd: OpenXrHost.cs
 // was a bad merge of two revisions (duplicated field/Update/Initialize blocks, missing braces). The decompiled
 // form is the authoritative D-171 behaviour. Only the decompiler's nullable-diagnostic noise is silenced here;
 // every other file in the project stays nullable-aware.
@@ -74,8 +74,20 @@ public sealed class OpenXrHost : MonoBehaviour
 	// Resolved once in Initialize from Config.HandPoseFrame, which refuses any other value there.
 	private bool handPoseAnchorFrame;
 
-	// D-202: one log line per session when a snap turn arrives while the view is composed in the head frame.
-	private bool handSnapIgnoredLogged;
+	// D-211 (BUG-203): session view-yaw offset for the head-frame snap turn, in degrees, wrapped to (-180, 180].
+	// D-195 composes the eyes from anchorPosition + the runtime pose and ignores anchorRotation, so the snap has to
+	// move the VIEW: this value is multiplied into both eye offsets and both eye orientations (PrepareCameras) and is
+	// the composition base HandAim gets for the hands/aim (LateUpdate), which keeps one frame for eyes, hands, reticle
+	// and fire path. The anchor - the player's place in the game world - never moves.
+	private float snapViewYaw;
+
+	// The step actually in force after SnapTurnPolicy.Resolve (0 = off, 30, 45), for the log line and the receipt.
+	private float snapStepDegrees;
+
+	// One log line per session for the first applied snap, plus a counter so a receipt can prove the path ran.
+	private bool handSnapAppliedLogged;
+
+	private int snapAppliedTurns;
 
 	private IntPtr callback;
 
@@ -655,7 +667,7 @@ public sealed class OpenXrHost : MonoBehaviour
 			// camera rotation in. That camera rotation is the player's facing on this game (+-90 deg), so the weapon,
 			// the reticle and the fire direction all came out 90 deg from where the player points. HandPoseFrame=Anchor
 			// restores the pre-D-202 behaviour for a single A/B sitting without a rebuild.
-			Quaternion handPoseBase = (handPoseAnchorFrame ? anchorRotation : Quaternion.identity);
+			Quaternion handPoseBase = (handPoseAnchorFrame ? anchorRotation : ViewYawRotation);
 			// D-136/D-138, restored (BUG-205): hand the managed phase machine's own numbers to the read-only probe.
 			handAim.SetRenderTimingPhase(phase, lastSubmitted, renderUntil);
 			handAim.Tick(source, anchorPosition + (((Component)player).transform.position - playerAnchor), handPoseBase, sourceScene, player, Config.HandFire);
@@ -677,26 +689,35 @@ public sealed class OpenXrHost : MonoBehaviour
 		}
 	}
 
+	// D-211 (BUG-203): the composition base for the head frame. Identity when the player has not snapped yet, so the
+	// verified no-snap picture is bit-for-bit the D-202 one (no multiplied identity drifting the eye poses).
+	private Quaternion ViewYawRotation => snapViewYaw == 0f ? Quaternion.identity : Quaternion.AngleAxis(snapViewYaw, Vector3.up);
+
 	private void ApplySnap(float degrees)
 	{
 		//IL_00c3: Unknown result type (might be due to invalid IL or missing references)
 		//IL_00c8: Unknown result type (might be due to invalid IL or missing references)
 		//IL_00da: Unknown result type (might be due to invalid IL or missing references)
 		//IL_00df: Unknown result type (might be due to invalid IL or missing references)
-		// D-202 (BUG-202): in the head frame a snap turn cannot be done by yawing the anchor. The eye cameras stopped
-		// using anchorRotation in D-195, so the legacy path only translated the view (a sideways jolt with no turn).
-		// The head-frame snap (a view-yaw offset in the eye composition, plus the eye offsets rotated about the head)
-		// is not implemented yet, so the request is refused loudly and the anchor is left untouched rather than moving
-		// the picture without turning it. HandPoseFrame=Anchor still exercises the legacy path for comparison.
+		// D-202 (BUG-202): the anchor cannot turn the view any more - D-195 stopped composing anchorRotation into the
+		// eye cameras, so the legacy path only translated the picture sideways.
+		// D-211 (user request 2026-10-20): the head frame now turns the VIEW instead. The accumulated offset
+		// (snapViewYaw) is multiplied into both eye offsets and both eye orientations in PrepareCameras, and the same
+		// rotation is handed to HandAim as its composition base (LateUpdate), so eyes, hands, aim ray, reticle and the
+		// head-relative movement all turn together. The anchor is untouched: the player keeps their place in the world.
+		// HandPoseFrame=Anchor still runs the legacy anchor path for an A/B sitting.
 		if (degrees != 0f && !handPoseAnchorFrame)
 		{
-			if (!handSnapIgnoredLogged)
+			float before = snapViewYaw;
+			snapViewYaw = HandAimMath.AddYaw(snapViewYaw, degrees);
+			snapAppliedTurns++;
+			if (!handSnapAppliedLogged)
 			{
-				handSnapIgnoredLogged = true;
+				handSnapAppliedLogged = true;
 				ManualLogSource? snapLogger = Logger;
 				if (snapLogger != null)
 				{
-					snapLogger.LogWarning((object)"[OPENXR_HOST] SNAP ignored on the head frame: the view-yaw offset is not implemented yet (D-202 / BUG-202). The anchor was left alone so the picture cannot jolt; the request is still counted in the receipt.");
+					snapLogger.LogInfo((object)("[OPENXR_HOST] SNAP applied in the head frame (D-211): step=" + FormatDegrees(degrees) + " deg, SnapTurnDegrees=" + FormatDegrees(snapStepDegrees) + ", view yaw " + FormatDegrees(before) + " -> " + FormatDegrees(snapViewYaw) + " deg. Pivot = anchorPosition; the player does not move."));
 				}
 			}
 			return;
@@ -708,6 +729,18 @@ public sealed class OpenXrHost : MonoBehaviour
 			anchorRotation = new Quaternion(newRotation[0], newRotation[1], newRotation[2], newRotation[3]);
 		}
 	}
+
+	private static string FormatDegrees(float value) => value.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+
+	// D-211: a new anchor (menu -> gameplay, a re-captured camera, a fresh session) starts facing where the game faces,
+	// so the accumulated view yaw must not survive it. Resetting here is what keeps the offset a comfort control
+	// instead of a permanent tilt the player cannot undo.
+	private void ResetSnapView()
+	{
+		snapViewYaw = 0f;
+		snapAppliedTurns = 0;
+	}
+
 
 	private static bool IsWeaponTwistValid(float degrees)
 	{
@@ -1015,6 +1048,19 @@ public sealed class OpenXrHost : MonoBehaviour
 		{
 			handFrameLogger.LogInfo((object)("[OPENXR_HOST] HAND_FRAME " + (handPoseAnchorFrame ? "Anchor (pre-D-202 A/B: the game camera rotation is multiplied into the hand/aim pose)" : "Head (D-202: hand/aim composed in the eye frame, identity - the same frame D-195 gave the eyes)") + "; the reticle, the muzzle alignment, the fire path and the snap anchor all follow this one value"));
 		}
+		// D-211 (BUG-203): the snap turn has exactly three choices (0 = off, 30, 45). Resolve it here, once per session,
+		// so the receipt and the log report the step even before HandAim exists, and an unlisted value is named out loud
+		// instead of being clamped behind the player's back.
+		snapStepDegrees = SnapTurnPolicy.Resolve(Config.SnapTurnDegrees);
+		ManualLogSource? snapStepLogger = Logger;
+		if (snapStepLogger != null)
+		{
+			if (snapStepDegrees != Config.SnapTurnDegrees)
+			{
+				snapStepLogger.LogWarning((object)("[OPENXR_HOST] SnapTurnDegrees=" + FormatDegrees(Config.SnapTurnDegrees) + " is not one of the shipped choices (0, 30, 45); using " + FormatDegrees(snapStepDegrees) + " degrees."));
+			}
+			snapStepLogger.LogInfo((object)("[OPENXR_HOST] SNAP_TURN " + FormatDegrees(snapStepDegrees) + " deg per right-stick push (" + (handPoseAnchorFrame ? "legacy anchor path" : "head-frame view yaw, D-211") + "; 0 = off)"));
+		}
 		// D-206 (BUG-204): the turret build-mode grip cycle has three candidate game surfaces plus an off switch, and the
 		// sitting A/Bs them, so an unknown value is refused here instead of defaulting to a surface nobody chose.
 		string turretCycle = Config.TurretCycle ?? "";
@@ -1141,6 +1187,7 @@ public sealed class OpenXrHost : MonoBehaviour
 		}
 		anchorPosition = ((Component)source).transform.position;
 		anchorRotation = ((Component)source).transform.rotation;
+		ResetSnapView();
 		// D-187: the host no longer touches QualitySettings. The game's own saved choice is used as-is, so the
 		// GRAPHICS_QUALITY log lines and the ApplyGraphicsQuality() helper are gone too.
 		(int, int) tuple = RenderResolutionPolicy.EyeSize(Config.EyeWidth, Config.EyeHeight, Config.EyePreset, Config.EyeScale);
@@ -1366,7 +1413,10 @@ public sealed class OpenXrHost : MonoBehaviour
 			handAim = new HandAimDriver(Config.Output, JsonOptions);
 			handAim.UiEnabled = Config.HandUi;
 			handAim.InputEnabled = Config.HandInput;
-			handAim.SnapDegrees = Math.Clamp(Config.SnapTurnDegrees, 0f, 180f);
+			// D-211: exactly three shipped choices (0 = off, 30, 45); Initialize already resolved it once for the log
+			// and the receipt, so this only hands the same value to HandAim (which stops reading the stick at 0).
+			snapStepDegrees = SnapTurnPolicy.Resolve(Config.SnapTurnDegrees);
+			handAim.SnapDegrees = snapStepDegrees;
 			handAim.HideHudBackdrop = Config.HideHudBackdrop;
 			handAim.UiVerticalOffset = HudLayoutPolicy.ClampVerticalOffset(Config.UiVerticalOffset);
 			handAim.GameBackdropMode = Config.GameBackdropMode;
@@ -1544,6 +1594,10 @@ public sealed class OpenXrHost : MonoBehaviour
 			}
 			val += ((Component)player).transform.position - playerAnchor;
 		}
+		// D-211 (BUG-203): one composition base for this frame. Identity when nothing has snapped, so the picture is
+		// exactly the D-202 one; otherwise both eye offsets and both eye orientations are yawed about the anchor by
+		// the accumulated snap, which is the turn itself (no translation-only jolt).
+		Quaternion viewYaw = ViewYawRotation;
 		for (int i = 0; i < 2; i++)
 		{
 			NativeEyePose pose = ((i == 0) ? status.Left : status.Right);
@@ -1556,8 +1610,13 @@ public sealed class OpenXrHost : MonoBehaviour
 			// the headset, not face-normal. Anchor rotation is now identity for composition; the axis-flip already
 			// happened inside StereoMath. Position composition still uses anchorPosition so the menu/gameplay offset
 			// is preserved exactly as before.
-			Vector3 val2 = val + new Vector3(array[0], array[1], array[2]);
-			Quaternion val3 = new Quaternion(array2[0], array2[1], array2[2], array2[3]);
+			// D-211: the eye offset is rotated with the view yaw (the head keeps its physical offset from the anchor,
+			// which is where the snap pivots) and the eye orientation is yawed by the same amount. Both stay in the
+			// same frame as the hands below, so the weapon and the reticle do not drift off the view.
+			Vector3 eyeOffset = new Vector3(array[0], array[1], array[2]);
+			Vector3 val2 = val + (snapViewYaw == 0f ? eyeOffset : viewYaw * eyeOffset);
+			Quaternion eyeRotation = new Quaternion(array2[0], array2[1], array2[2], array2[3]);
+			Quaternion val3 = (snapViewYaw == 0f ? eyeRotation : viewYaw * eyeRotation);
 			float[] array3 = StereoMath.UnityView(new float[3] { val2.x, val2.y, val2.z }, new float[4] { val3.x, val3.y, val3.z, val3.w });
 			// D-186-FovScale: the native host already multiplied (pose.Left, pose.Right) by Config.FovScaleX and
 			// (pose.Up, pose.Down) by Config.FovScaleY when it wrote them into HostStatus, so the projection
@@ -1597,7 +1656,10 @@ public sealed class OpenXrHost : MonoBehaviour
 					// so the next receipt can be matched against the ray, then the right compensation
 					// quaternion (or the right code path) can be picked exactly. Removed once ray alignment
 					// is verified head-on.
-					anchorRotation = new float[4] { anchorRotation.x, anchorRotation.y, anchorRotation.z, anchorRotation.w }
+					anchorRotation = new float[4] { anchorRotation.x, anchorRotation.y, anchorRotation.z, anchorRotation.w },
+					// D-211: the view-yaw offset the eyes/hands were composed with, so a playtest receipt proves the
+					// snap turned the picture rather than jolting it.
+					viewYaw = snapViewYaw
 				});
 			}
 		}
@@ -1706,6 +1768,12 @@ public sealed class OpenXrHost : MonoBehaviour
 			captureFirstFrames = Config.CaptureFirstFrames,
 			gameBackdropMode = Config.GameBackdropMode,
 			hideHudBackdrop = Config.HideHudBackdrop,
+			// D-211: the head-frame snap turn is provable from the receipt alone - the step in force, the accumulated
+			// view yaw and how many steps were applied. handFrame names which path these numbers belong to.
+			handFrame = (handPoseAnchorFrame ? "Anchor" : "Head"),
+			snapTurnDegrees = snapStepDegrees,
+			snapViewYaw = snapViewYaw,
+			snapTurnsApplied = snapAppliedTurns,
 			worldMarkers = Config.WorldMarkers,
 			markerKinds = Config.MarkerKinds,
 			markerMaxDistance = Config.MarkerMaxDistance,
@@ -2397,6 +2465,7 @@ public sealed class OpenXrHost : MonoBehaviour
 		sourceScene = scene;
 		anchorPosition = ((Component)source).transform.position;
 		anchorRotation = ((Component)source).transform.rotation;
+		ResetSnapView();
 		gameplayIdentity = new
 		{
 			policy = "active-player-fp-camera-direct-child-v1",
@@ -2465,6 +2534,7 @@ public sealed class OpenXrHost : MonoBehaviour
 		sourceScene = SceneManager.GetActiveScene().name;
 		anchorPosition = ((Component)source).transform.position;
 		anchorRotation = ((Component)source).transform.rotation;
+		ResetSnapView();
 		for (int i = 0; i < 2; i++)
 		{
 			if ((Object)(object)eyes[i] != (Object)null)
@@ -2542,6 +2612,7 @@ public sealed class OpenXrHost : MonoBehaviour
 			sourceScene = SceneManager.GetActiveScene().name;
 			anchorPosition = ((Component)source).transform.position;
 			anchorRotation = ((Component)source).transform.rotation;
+			ResetSnapView();
 			for (int i = 0; i < 2; i++)
 			{
 				if ((Object)(object)eyes[i] != (Object)null)
@@ -2587,7 +2658,9 @@ public sealed class OpenXrHost : MonoBehaviour
 		handAim = new HandAimDriver(Config.Output, JsonOptions);
 		handAim.UiEnabled = Config.HandUi;
 		handAim.InputEnabled = Config.HandInput;
-		handAim.SnapDegrees = Math.Clamp(Config.SnapTurnDegrees, 0f, 180f);
+		// D-211: same three-choice resolution as the menu path (see Initialize; the warning is logged there once).
+		snapStepDegrees = SnapTurnPolicy.Resolve(Config.SnapTurnDegrees);
+		handAim.SnapDegrees = snapStepDegrees;
 		handAim.HideHudBackdrop = Config.HideHudBackdrop;
 		handAim.UiVerticalOffset = HudLayoutPolicy.ClampVerticalOffset(Config.UiVerticalOffset);
 		handAim.GameBackdropMode = Config.GameBackdropMode;

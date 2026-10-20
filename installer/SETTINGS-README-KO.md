@@ -1,7 +1,7 @@
 ﻿# Vampire Hunters VR 화면 설정 (VhvrSettings.exe, 0.7.1)
 
-이 프로그램은 `BepInEx\config\vhvr-openxr-host.json`의 **화면 설정 4개**를 고칩니다.
-**화면 크기(눈 렌더 해상도)**, **In-VR UI 크기**, **눈당 MSAA**, **이등방성 필터링 16x**. 그 외 키는 건드리지 않습니다.
+이 프로그램은 `BepInEx\config\vhvr-openxr-host.json`의 다음 키만 고칩니다.
+**화면 크기**(`EyePreset`/`EyeWidth`/`EyeHeight`/`EyeScale`), **In-VR UI 크기**(`uiScale`), **눈당 MSAA**(`EyeMsaa`), **이등방성 필터링 16x**(`Anisotropic`), **렌더 FOV 배율**(`FovScaleX`/`FovScaleY`), **스냅 턴**(`SnapTurnDegrees`). 그 외 키는 건드리지 않습니다.
 
 > 0.6에서 잠깐 끼어 있던 `GraphicsQuality` 다이얼(Unity 품질 레벨 강제 지정)은 **0.7에서 제거**됐습니다(D-187). 이제 게임 자체의 품질 설정(Steam 실행 시 고른 값 / PlayerPrefs)을 그대로 사용합니다.
 
@@ -36,9 +36,16 @@
 - on 으로 켜면 비스듬한 벽/바닥의 텍스처(멀리 있는 표면)가 선명해집니다. GPU 텍스처 유닛 단계 비용(거의 없음). **fps 비용은 아직 측정하지 않았습니다**(첫 PLAYTEST-D104 에서 측정 예정).
 - 0.7 의 호스트(`OpenXrHost.cs:879`)는 이미 이 키를 받습니다 — 0.7.1 은 **사용자 도구(VhvrSettings.exe UI/CLI)** 로 노출하는 것이 전부입니다. 호스트 코드는 변경되지 않았습니다.
 
+## 고르는 값 5 — 스냅 턴 (right stick, D-211)
+- **Off / 30 deg (기본) / 45 deg** 세 가지뿐입니다. 키는 `SnapTurnDegrees`(숫자 0 / 30 / 45).
+- **Off**면 오른쪽 스틱 좌/우가 아무 일도 하지 않습니다. **30/45**면 한 번 밀 때 그 각도만큼 시야가 돌고, 스틱을 놓았다가 다시 밀어야 다음 칸입니다.
+- 회전은 **제자리**에서 일어납니다(플레이어 위치 불변). 앞으로 밀면 새 방향으로 이동합니다.
+- 목록에 없는 값을(예: 60, 문자 `"45"`) 파일에 직접 넣으면 프로그램은 shipped 값 **30**으로 표시하고, 호스트도 30으로 동작하며 로그에 경고 1줄을 남깁니다. 저장하면 0/30/45 중 하나만 씁니다.
+- VR 안에서 조작하기 전에 **양 스틱 클릭으로 리센터**를 먼저 하세요(메뉴 패널이 정면에 옵니다).
+
 ## 저장 동작
 - `Apply`를 누르면 **저장 전에** `vhvr-openxr-host.json.<시각>.bak` 백업을 만듭니다.
-- 이 프로그램은 **4개 키(`EyePreset`/`EyeWidth`/`EyeHeight`/`EyeScale`) + `uiScale` + `EyeMsaa`** 만 바꾸고 나머지는 그대로 둡니다. In-VR UI size를 건드리지 않으면 `uiScale`도 안 건드립니다.
+- 이 프로그램은 **`EyePreset`/`EyeWidth`/`EyeHeight`/`EyeScale` + `uiScale` + `EyeMsaa` + `Anisotropic` + `FovScaleX`/`FovScaleY` + `SnapTurnDegrees`** 만 바꾸고 나머지는 그대로 둡니다. In-VR UI size를 건드리지 않으면 `uiScale`도 안 건드립니다.
 - 범위를 벗어난 값(눈당 512–4096 밖, 배율 0.5–2.0 밖, UI 0.5–3.0 밖, MSAA 1·2·4·8 밖)은 **거부**합니다(조용히 바뀌지 않음).
 - 옛 설정(눈당 2064x2208)을 쓰던 파일이면 "Use 1920x1080 base" 버튼으로 새 기준(양안 3840x2160)으로 옮길 수 있습니다.
 

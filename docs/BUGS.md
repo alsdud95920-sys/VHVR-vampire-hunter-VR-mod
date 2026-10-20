@@ -1314,13 +1314,21 @@ Verified: extras 플러그인·설정 도구 자체는 별도로 검증(60/60 �
 - Verified (오프라인): Stage0 경고 0/오류 0, DLL 430,592 B / SHA `34AA247600E3DEA20895F77A49A005B296B950CCFE43EA1483619ECB765DE525`, `tests\HandAim` **203/203**(신규 13: `d202-anchor-frame-controller-direction-is-90-degrees-off-the-view` = 90.0°, `d202-head-frame-controller-direction-is-the-view` = 0°, `d202-head-frame-takeover-keeps-the-authored-rotation`, `source-rest-capture-uses-the-same-frame-as-the-drive` 등), GameplayCamera 38/38, WeaponRuntime 67/67, VhvrExtras 72/72, FlameEndpoint 138/138, ShotScopes 28/28.
 - Not verified (헤드셋): 손이 실제로 컨트롤러를 따라오는지는 착석 1회가 필요하다(`docs\playtests\PLAYTEST-D202-HAND-FRAME-KO.md`). 왼손 슬롯은 이번 실행의 Playground 씬에서 `weaponsInSlot=0`이라 확인 불가.
 
-## BUG-203 — 스냅 턴이 D-195 이후 시야를 돌리지 못한다 (OPEN, D-202에서 헤드 프레임 한정 거부로 봉합, 2026-10-18)
+## BUG-203 — 스냅 턴이 D-195 이후 시야를 돌리지 못한다 (FIXED IN SOURCE / D-211, 헤드셋 재검증 대기, 2026-10-20)
 
 - Expected: 오른쪽 스틱 좌/우(≥0.7, `SnapTurnDegrees=30`)로 요청하면 시야가 30° 돈다.
 - Actual: legacy 경로는 `anchorRotation`만 돌리는데(`OpenXrHost.ApplySnap` → `HandAimMath.SnapAnchor`) 눈 합성이 그 값을 쓰지 않는다(D-195). 회전 없이 **앵커 위치 항 때문에 화면이 옆으로 살짝 튀기만** 한다.
 - Evidence: `run\hand-aim.json`의 `input.snapTurns = 0`(이번 실행에서 사용자가 누르지 않아 **아직 실기기 미관측**), `snapDegrees = 30`. 코드 근거는 `OpenXrHost.cs:1489-1490`(눈 = anchorRotation 미사용) + `ApplySnap`(anchor만 회전).
 - D-202 조치: 기본(헤드 프레임)에서 요청을 **거부하고 경고 1회**(`SNAP ignored on the head frame ...`) — 회전 없는 튐을 만들지 않는다. `HandPoseFrame=Anchor`에서는 레거시 경로가 그대로 살아 있어 A/B로 비교할 수 있다.
-- 올바른 수정(미착수): 눈 합성에 세션 view-yaw 오프셋(`snapViewYaw`)을 곱하고, 두 눈 오프셋을 **헤드 기준으로 회전**시킨다. `SetHead`가 눈 transform에서 파생되므로 `HandInput.HeadRelative`의 movement yaw와 손/마커는 자동으로 따라온다. 판정: 스냅 1회 후 시야가 30° 돌고 **위치가 튀지 않으며** `moveYawDelta`/전방 이동이 함께 돈다.
+- 수정 (D-211, 2026-10-20, 사용자 요청 "스냅턴을 추가하고, 각도를 30도 혹은 45도, 비활성화 3가지로 나눠 옵션으로 넣어줘"):
+  - `OpenXrHost.snapViewYaw`(세션 view-yaw, (-180, 180]로 랩)를 `ApplySnap`에서 누적하고, `PrepareCameras`가 **두 눈 오프셋과 두 눈 회전 양쪽에** 곱한다. `snapViewYaw == 0`이면 곱하지 않으므로 스냅을 쓰지 않는 화면은 D-202와 동일하다.
+  - 손/조준은 같은 회전을 합성 base로 받는다(`handPoseBase = ViewYawRotation`). `SetHead`가 눈 transform에서 파생되므로 `HandInput.HeadRelative`의 이동 yaw, 리티클, 마커가 자동으로 따라온다. **앵커는 건드리지 않으므로 플레이어 위치가 튀지 않는다.**
+  - 새 앵커를 잡는 4곳(초기화 / 게임플레이 전환 / 메뉴 카메라 채택 / 메뉴 복귀)에서 `ResetSnapView()`로 0으로 되돌린다 - 세션 중 누적된 시야 오프셋이 다음 씬까지 남지 않는다.
+  - 각도는 **3택**: `0`(끄기) / `30`(기본) / `45`. 그 밖의 값은 `SnapTurnPolicy.Resolve`가 30으로 해석하고 경고를 1줄 남긴다(조용한 다운그레이드 없음).
+  - 사용자 노출: `VhvrSettings.exe`의 "Snap turn (right stick)" 라디오 3개(Off / 30 deg / 45 deg)와 미리보기 줄, `config\schema.json`의 enum `[0, 30, 45]`, `installer\install.ps1`의 기본값 30 + 주석.
+  - 영수증: `run\host.json`에 `handFrame`, `snapTurnDegrees`, `snapViewYaw`, `snapTurnsApplied`, 10프레임 evidence에 `viewYaw`를 남겨 헤드셋 판정을 수치로 확인할 수 있게 했다.
+- Verified (오프라인, 2026-10-20): 플러그인 빌드 경고 0/오류 0, `tests\HandAim` **238/238**(신규 7: 3택·미등록값 해석·끄기·랩·누적, 소스 배선 3), `tests\Settings` **13/13**(신규: 0/45 왕복·다른 키 보존·문자열 숫자 읽기·3택 계약), `VhvrSettings --selftest` PASS(`snap=30`), `--form-selftest` PASS(controls=33, clipped=0, 미리보기 "Snap turn 45 deg per right-stick push").
+- Not verified (헤드셋): 한 번 밀면 그 각도만큼 돌고 위치가 튀지 않는지, 전방 이동이 새 방향으로 함께 도는지는 착석 1회가 필요하다(판정 3종: `docs\CONTROLS.md` §6).
 
 
 ## BUG-204 — 엔지니어 터렛 건설: 건설 UI는 열리는데 왼손 X로 설치가 안 됨 (OPEN, 원인 확정 / 수정 미착수, 2026-10-18)

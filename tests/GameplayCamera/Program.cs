@@ -42,8 +42,8 @@ Check("source-camera-loss-guard", host.Contains("((Component)source).transform.p
 // That double axis-flip is exactly the TOOL-097 regression the D-195 fix removed, so the literal is gone on purpose and
 // this guard now asserts the SAME BEHAVIOUR in the current spelling: the eye source still follows the player's
 // translation delta, and the runtime rotation is still composed WITHOUT re-applying anchorRotation (D-195 preserved).
-Check("source-player-translation", host.Contains("((Component)player).transform.position - playerAnchor") && host.Contains("Vector3 val2 = val + new Vector3(array[0], array[1], array[2]);"));
-Check("source-no-double-axis-flip", host.Contains("Quaternion val3 = new Quaternion(array2[0], array2[1], array2[2], array2[3]);") && !host.Contains("anchorRotation * new Vector3("));
+Check("source-player-translation", host.Contains("((Component)player).transform.position - playerAnchor") && host.Contains("Vector3 val2 = val + (snapViewYaw == 0f ? eyeOffset : viewYaw * eyeOffset);"));
+Check("source-no-double-axis-flip", host.Contains("Quaternion val3 = (snapViewYaw == 0f ? eyeRotation : viewYaw * eyeRotation);") && !host.Contains("anchorRotation * new Vector3("));
 Check("source-readonly-muzzle-inventory", host.Contains("muzzlePath = (((Object)(object)muzzle_flash_spawn == (Object)null) ? null : ObjectPath(muzzle_flash_spawn))") && !host.Contains(".shoot_forward(") && !host.Contains(".fire("));
 Check("runner-no-exhausted-motion", runner.Contains("if($Gameplay -and $Motion){throw") && runner.Contains("$summary.m4bPass=$false"));
 Check("runner-exact-transfer", runner.Contains("runtime differs from exact Y-flipped source") && runner.Contains("$r.gameplayIdentity.scene -ne $r.scene"));

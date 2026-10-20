@@ -12,7 +12,9 @@ namespace VampireHuntersVR.Interaction;
 // together = the game's Fire action = build. Live only while the game reports PlayerController.is_turret_mode; the
 // grips are otherwise unbound, exactly as D-057 decided.
 // If the pad cannot be created it falls back to PlayerInputController.MoveInput/JumpInput.
-// No OS keyboard/mouse input is synthesized. D-099: right stick X = snap turn (the host rotates the VR anchor about the head).
+// No OS keyboard/mouse input is synthesized. D-099: right stick X = snap turn. D-211: the host turns the VIEW by a
+// session view-yaw offset about the anchor (HandPoseFrame=Head, the default); the legacy anchor rotation is still used
+// when HandPoseFrame=Anchor. SnapTurnDegrees is one of three choices - 0 (off), 30, 45.
 // NOT headset tested. The fallback path (no virtual pad) has no interact or reload route.
 internal sealed partial class HandAimDriver
 {

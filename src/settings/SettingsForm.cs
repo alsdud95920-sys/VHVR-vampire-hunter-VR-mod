@@ -31,16 +31,22 @@ internal sealed class SettingsForm : Form
     // 0.05 steps, matching HostConfigTool.FovScaleChoices, with the exact value shown beside each slider.
     private readonly TrackBar _fovScaleX = new() { Left = 140, Top = 208, Width = 130, Height = 40, AutoSize = false, Orientation = Orientation.Horizontal, Minimum = 50, Maximum = 100, TickStyle = TickStyle.BottomRight, TickFrequency = 5, SmallChange = 5, LargeChange = 10, Value = 100, BackColor = SystemColors.Control };
     private readonly TrackBar _fovScaleY = new() { Left = 500, Top = 208, Width = 130, Height = 40, AutoSize = false, Orientation = Orientation.Horizontal, Minimum = 50, Maximum = 100, TickStyle = TickStyle.BottomRight, TickFrequency = 5, SmallChange = 5, LargeChange = 10, Value = 100, BackColor = SystemColors.Control };
+    // D-211: snap turn (right stick), exactly three choices - 0 = off, 30 = shipped, 45 = wider. Same key the host
+    // reads (SnapTurnDegrees); an off choice writes 0, which makes HandInput stop reading the stick entirely.
+    private readonly RadioButton _snapOff = new() { Left = 150, Top = 250, Width = 90, Text = "Off" };
+    private readonly RadioButton _snap30 = new() { Left = 245, Top = 250, Width = 110, Text = "30 deg (default)" };
+    private readonly RadioButton _snap45 = new() { Left = 360, Top = 250, Width = 90, Text = "45 deg" };
     private readonly Label _fovXVal = new() { Left = 276, Top = 222, Width = 56, ForeColor = Color.DimGray, Text = "1.00" };
     private readonly Label _fovYVal = new() { Left = 636, Top = 222, Width = 56, ForeColor = Color.DimGray, Text = "1.00" };
     // D-104-iso-promotion: anisotropic filtering on eye texture sampling (D-104). Host code already reads the key
     // (OpenXrHost.cs:879); 0.7.1 promotes it to the user-facing settings tool. Default OFF (matches D-104).
     private readonly CheckBox _aniso = new() { Left = 22, Top = 176, Width = 360, Height = 20, Text = "Anisotropic 16x (smoother angled textures; ~negligible cost)" };
     private readonly Label _base = new() { Left = 22, Top = 152, Width = 430, Height = 22, ForeColor = Color.DimGray };
-    private readonly Label _preview = new() { Left = 22, Top = 306, Width = 656, Height = 110, Font = new Font("Segoe UI", 10F, FontStyle.Bold) };
-    private readonly Label _status = new() { Left = 22, Top = 424, Width = 656, Height = 100, ForeColor = Color.DimGray };
-    private readonly Button _save = new() { Text = "Apply", Left = 490, Top = 542, Width = 90, Height = 34 };
-    private readonly Button _close = new() { Text = "Close", Left = 590, Top = 542, Width = 90, Height = 34 };
+    private readonly Label _preview = new() { Left = 22, Top = 306, Width = 656, Height = 130, Font = new Font("Segoe UI", 10F, FontStyle.Bold) };
+    private readonly Label _status = new() { Left = 22, Top = 444, Width = 656, Height = 100, ForeColor = Color.DimGray };
+    // D-211: the snap-turn row and the longer preview label needed 20 px more window height.
+    private readonly Button _save = new() { Text = "Apply", Left = 490, Top = 560, Width = 90, Height = 34 };
+    private readonly Button _close = new() { Text = "Close", Left = 590, Top = 560, Width = 90, Height = 34 };
     private readonly Button _resetBase = new() { Text = "Use 1920x1080 base", Left = 462, Top = 148, Width = 216, Height = 28 };
     private int _baseWidth = 1920;
     private int _baseHeight = 1080;
@@ -56,7 +62,7 @@ internal sealed class SettingsForm : Form
         // 580. ClippedControls() is asserted by --form-selftest, so a later edit that pushes a label off
         // the window fails the build instead of shipping a clipped window. FixedDialog + both this size
         // and the self-test keep the whole picture readable at a glance.
-        ClientSize = new Size(700, 600);
+        ClientSize = new Size(700, 620);
         AutoScaleMode = AutoScaleMode.Font;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false; MinimizeBox = false; StartPosition = FormStartPosition.CenterScreen;
@@ -77,6 +83,9 @@ internal sealed class SettingsForm : Form
             _fovScaleX, _fovXVal,
             new Label { Text = "Render FOV Y (vertical)", Left = 380, Top = 222, Width = 110, ForeColor = Color.DimGray },
             _fovScaleY, _fovYVal,
+            // D-211: snap turn row, between the FOV sliders and the preview.
+            new Label { Text = "Snap turn (right stick)", Left = 22, Top = 252, Width = 122, ForeColor = Color.DimGray },
+            _snapOff, _snap30, _snap45,
             _aniso,
             _base, _resetBase,
             new Label { Text = "This will be used", Left = 22, Top = 296, Width = 200 },
@@ -88,6 +97,8 @@ internal sealed class SettingsForm : Form
         _save.Click += (_, _) => Save();
         _close.Click += (_, _) => Close();
         foreach (RadioButton radio in new[] { _low, _normal, _high, _custom }) radio.CheckedChanged += (_, _) => Preview();
+        // D-211: the three snap-turn choices are exclusive and each one writes its own degree value.
+        foreach (RadioButton radio in new[] { _snapOff, _snap30, _snap45 }) radio.CheckedChanged += (_, _) => Preview();
         _scale.ValueChanged += (_, _) => Preview();
         _uiScale.ValueChanged += (_, _) => Preview();
         _msaa.Items.AddRange(new object[] { "1", "2", "4", "8" });
@@ -110,6 +121,18 @@ internal sealed class SettingsForm : Form
 
     private string SelectedPreset => _custom.Checked ? RenderResolutionPolicy.Custom : _high.Checked ? RenderResolutionPolicy.High :
         _low.Checked ? RenderResolutionPolicy.Low : RenderResolutionPolicy.Normal;
+
+    // D-211: snap-turn radio group <-> degrees. Exactly one of the three is always checked, so loading an unexpected
+    // value can never leave the row blank and then write "whatever was checked last" on Apply.
+    private void SetSnapTurn(float degrees)
+    {
+        _snapOff.Checked = degrees == 0f;
+        _snap30.Checked = degrees == 30f;
+        _snap45.Checked = degrees == 45f;
+        if (!_snapOff.Checked && !_snap30.Checked && !_snap45.Checked) _snap30.Checked = true;
+    }
+
+    private float SelectedSnapTurn => _snap45.Checked ? 45f : _snapOff.Checked ? 0f : 30f;
 
     private void SetPreset(string preset)
     {
@@ -148,6 +171,10 @@ internal sealed class SettingsForm : Form
             // shipped value (DefaultAnisotropic = false). An unknown non-bool value makes System.Text.Json throw
             // before we get here, so the only paths that reach this line are bool/missing.
             _aniso.Checked = HostConfigTool.ReadAnisotropic(_root) ?? HostConfigTool.DefaultAnisotropic;
+            // D-211: 0/30/45 are the only choices; anything else (a hand-edited 60) shows as the shipped 30, and
+            // the host logs the same fallback, so the window and the game never disagree about the step.
+            float snapTurn = HostConfigTool.ReadSnapTurnDegrees(_root) ?? HostConfigTool.DefaultSnapTurnDegrees;
+            SetSnapTurn(HostConfigTool.ValidateSnapTurnDegrees(snapTurn) == null ? snapTurn : HostConfigTool.DefaultSnapTurnDegrees);
             // D-186-FovScale: a value outside the 0.50-1.00 choice list would be refused by the runtime (it
             // keeps 1.0), so the form shows 1.00 for it. An absent X/Y key falls back to DefaultFovScale =
             // 1.0 (the shipped pass-through), so an unedited 0.7.1 file renders the same picture. A
@@ -202,6 +229,12 @@ internal sealed class SettingsForm : Form
             fovValueX < 1.0f || fovValueY < 1.0f
                 ? "0.50-0.95 narrow the rendered FOV; ~" + (100.0 * (1.0f - fovValueX * fovValueY)).ToString("0", CultureInfo.InvariantCulture) + "% fewer pixels estimated)"
                 : "pass-through, no pixel reduction)");
+        // D-211: snap turn is a comfort control, so the preview names the step in plain words and says off plainly.
+        float snap = SelectedSnapTurn;
+        _preview.Text += "\nSnap turn " + (snap == 0f
+            ? "off (the right stick does not turn the view)"
+            : snap.ToString("0", CultureInfo.InvariantCulture) + " deg per right-stick push (left/right only)") +
+            " - one step per push; the player stays in place.";
     }
 
     private void Save()
@@ -223,6 +256,8 @@ internal sealed class SettingsForm : Form
             // FovScale key on save, so a migrated file ends up with FovScaleX + FovScaleY only.
             HostConfigTool.ApplyFovScaleX(_root, _fovScaleX.Value / 100f);
             HostConfigTool.ApplyFovScaleY(_root, _fovScaleY.Value / 100f);
+            // D-211: the three-choice snap turn (0 off / 30 / 45).
+            HostConfigTool.ApplySnapTurnDegrees(_root, SelectedSnapTurn);
             string backup = HostConfigTool.Save(_path.Text, _root);
             SetStatus("Saved. Backup: " + Path.GetFileName(backup) + "\n" + size.Preview + "\nRestart the game for it to take effect.", false);
         }

@@ -26,7 +26,7 @@ extras **0.9.5 후보** (`BepInEx\plugins\VhvrExtras.dll`, SHA256 `52E6707290D43
 | 왼쪽 트리거 | 왼손 무기 주 발사 | 누름 ≥ **0.6**, 해제 < **0.35**. **Y를 누르고 있는 동안은 그 손의 주 발사가 막힘** |
 | 왼쪽 메뉴(≡) | 일시정지 (게임 `Start`/ESC) | 레벨업 카드 중에는 무시(D-094) |
 | 왼쪽 그립(스퀴즈) | 평소 **미할당**(D-057). **엔지니어 건설 모드에서만** = 이전 터렛 종류(한 칸) | D-206 (BUG-204). 게임이 `PlayerController.is_turret_mode == true`라고 말하는 동안에만 동작. 그립을 **놓을 때** 한 칸 (다른 그립과 함께 눌린 적이 있는 그립은 코드로 인정해 칸 이동 없음) |
-| 오른쪽 스틱 좌/우 | **30° 스냅 턴** | 한 번 밀 때 1회(≥0.7), 중앙 복귀(<0.3) 후 재무장. 호스트가 VR 앵커를 회전. **D-202부터 기본(헤드 프레임)에서는 동작하지 않습니다 — 요청을 거부하고 경고 1회(`SNAP ignored on the head frame`, BUG-203), 시야가 튀지 않게만 합니다** |
+| 오른쪽 스틱 좌/우 | **스냅 턴: 30°(기본) / 45° / 끄기** | 한 번 밀 때 1회(≥0.7), 중앙 복귀(<0.3) 후 재무장. **D-211: 헤드 프레임에서 시야를 세션 view-yaw 오프셋으로 돌립니다** — 두 눈 오프셋과 두 눈 회전, 그리고 손/조준 합성 base에 같은 회전을 곱하고 앵커(플레이어가 서 있는 자리)는 건드리지 않아 제자리에서 돕니다. 값은 `VhvrSettings.exe`의 "Snap turn (right stick)"에서 선택(BUG-203 수정) |
 | 오른쪽 스틱 위 | 혈능력 (게임 `F`) | ≥0.7 진입 / <0.3 해제 + 축 우세 규칙(대각선 오발 방지) |
 | 오른쪽 스틱 아래 | 특수 능력 = 스카우트 대시 (게임 `SHIFT`) | 위와 동일한 래치 정책 |
 | 오른쪽 스틱 클릭 | 오른쪽 로봇 팔 (게임 `E`) | 일시정지 중 미발동 |
@@ -62,7 +62,7 @@ extras **0.9.5 후보** (`BepInEx\plugins\VhvrExtras.dll`, SHA256 `52E6707290D43
 | Left trigger | Left-hand weapon, main fire | Press ≥ **0.6**, release < **0.35**. **While Y is held that hand's main fire is blocked** |
 | Left menu (≡) | Pause (game `Start`/ESC) | Ignored during level-up cards (D-094) |
 | Left grip (squeeze) | **Unbound by default** (D-057). **Inside the engineer's build mode only**: previous turret blueprint (one step) | D-206 (BUG-204). Live only while the game reports `PlayerController.is_turret_mode == true`; a step happens when the grip is **released**, and never for a grip that was held together with the other one (that is the chord) |
-| Right stick left/right | **30° snap turn** | One turn per push (≥0.7), re-arms after the stick returns (<0.3). The host rotates the VR anchor. **From D-202 on, this does not work in the default (head) frame: the request is refused with a one-time warning (`SNAP ignored on the head frame`, BUG-203) so the picture cannot jolt** |
+| Right stick left/right | **Snap turn: 30° (default) / 45° / off** | One turn per push (≥0.7), re-arms after the stick returns (<0.3). **D-211: in the head frame the host turns the VIEW by a session view-yaw offset** — both eye offsets, both eye orientations and the hand/aim composition base get the same rotation, and the anchor (where the player stands) is untouched, so you turn in place. Pick the step in `VhvrSettings.exe` → "Snap turn (right stick)" (BUG-203 fix) |
 | Right stick up | Blood ability (game `F`) | ≥0.7 engage / <0.3 release + dominant-axis rule (no diagonal misfires) |
 | Right stick down | Special ability = the scout's dash (game `SHIFT`) | Same latch policy |
 | Right stick click | Right robot arm (game `E`) | Does not fire while paused |
@@ -123,7 +123,7 @@ The mod synthesizes no OS keyboard/mouse input; it drives the game's own input A
 | 이동 데드존 (move deadzone) | 0.18 | `HandInput.MoveDeadzone` |
 | 트리거 눌림/해제 (trigger press/release) | 0.6 / 0.35 | `HandFirePolicy.PressAt/ReleaseAt` |
 | 스틱 능력 진입/해제 (ability latch) | 0.7 / 0.3 (+축 우세) | `StickLatchPolicy` |
-| 스냅 턴 (snap turn) | 30° 1회/밀기, 해제 0.3 — **D-202: 헤드 프레임에서 미구현(거부)** | `SnapTurnPolicy`, `SnapTurnDegrees=30`, `HandPoseFrame` (BUG-203) |
+| 스냅 턴 (snap turn) | 30°(기본)/45°/끄기 중 선택, 1회/밀기, 해제 0.3 — **D-211: 헤드 프레임에서 시야 회전으로 구현** | `SnapTurnPolicy.Choices`, `SnapTurnDegrees`(0/30/45), `VhvrSettings.exe`, `HandPoseFrame` (BUG-203) |
 | 손/조준 합성 프레임 (hand/aim frame) | `Head` = 눈과 같은 프레임 (기본) / `Anchor` = 0.9.4 A/B | `HandPoseFrame`, D-202/BUG-202 |
 | 그립 눌림/해제 (grip press/release) | 0.6 / 0.35 | `TurretGripPolicy.PressAt/ReleaseAt` |
 | 터렛 종류 한 칸 펄스 (blueprint step pulse) | 0.08 초 | `TurretGripPolicy.StepSeconds` |
@@ -139,14 +139,18 @@ The mod synthesizes no OS keyboard/mouse input; it drives the game's own input A
 
 ## 6. 상태 (정직) / Honest status
 
-- 표의 모든 행은 **설치된 코드에 존재**하는 동작이며 오프라인 테스트(HandAim 203/203, GameplayCamera 38/38, WeaponRuntime 67/67, VhvrExtras 72/72, FlameEndpoint 138/138, ShotScopes 28/28)를 통과했습니다.
+- 표의 모든 행은 **설치된 코드에 존재**하는 동작이며 오프라인 테스트(HandAim **238/238**, GameplayCamera 38/38, WeaponRuntime 67/67, VhvrExtras 72/72, FlameEndpoint 138/138, ShotScopes 28/28, Settings 13/13)를 통과했습니다.
   Every row exists in the installed code and passed the offline suites.
 - 단 **행별 헤드셋 승인 기록은 없습니다.** 양 스틱 클릭 리센터·헤드 프레임 레이저는 `docs\playtests\PLAYTEST-D201-MENU-CENTER-KO.md`,
   **손/무기 방향·리티클·무기 기울기와 스냅 턴은** `docs\playtests\PLAYTEST-D202-HAND-FRAME-KO.md`의 착석 1회로 확인해야 합니다.
+  **D-211 스냅 턴(30/45/끄기)** 은 특히 판정 항목이 3개입니다: ① 한 번 밀면 그 각도만큼 돌고 위치가 튀지 않는다 ② 앞으로 밀면 새 방향으로 이동한다
+  (`moveYawDelta`가 함께 돈다) ③ `run\host.json`의 `snapViewYaw`/`snapTurnsApplied`가 실제로 증가한다.
 - **D-202 변경점 (효력 있음)**: 게임플레이 손/조준 합성 프레임이 게임 카메라(플레이어 yaw) → **눈과 같은 헤드 프레임**으로 바뀌었습니다.
-  D-202 이전 빌드에서는 무기와 리티클이 컨트롤러가 가리키는 방향에서 90° 벗어나 보였습니다(BUG-202). 스냅 턴은 위 표대로 미구현입니다.
+  D-202 이전 빌드에서는 무기와 리티클이 컨트롤러가 가리키는 방향에서 90° 벗어나 보였습니다(BUG-202). 스냅 턴은 D-211에서 시야 회전으로 구현했고(30/45/끄기), 아직 헤드셋 미검증입니다.
   There is **no per-row headset acceptance record** — the recenter chord and head-frame laser need the D-201 script, the hand/weapon
-  direction, reticle, weapon roll and the snap turn need the D-202 script. D-202 moved the gameplay hand/aim composition into the
+  direction, reticle and weapon roll need the D-202 script; the D-211 snap turn (30 deg / 45 deg / off) needs its own
+  three-point check — one push turns exactly that much with no position jolt, forward movement follows the new heading,
+  and `snapViewYaw` / `snapTurnsApplied` in `run\host.json` actually advance. D-202 moved the gameplay hand/aim composition into the
   head frame (pre-D-202 builds showed the weapon and reticle 90° off the controller, BUG-202).
 - 바인딩을 바꾸려면 소스 상수(`HandAim.cs`)를 고치고 `tests\HandAim`·`tests\VhvrExtras`를 다시 돌려야 합니다.
   런타임 재바인딩은 **미구현**(`config\bindings.json`의 `rebinding.status = NOT_IMPLEMENTED`).

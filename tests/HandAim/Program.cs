@@ -198,6 +198,26 @@ Check("ability-diagonal-turn-does-not-start-either", AbilityStickPolicy.Next(fal
 Check("ability-equal-axis-does-not-start-either", AbilityStickPolicy.Next(false, false, 0.9f, 0.9f, true) == (false, false));
 Check("ability-nonfinite-releases-both", AbilityStickPolicy.Next(true, true, float.NaN, 0f, true) == (false, false) && AbilityStickPolicy.Next(true, true, float.PositiveInfinity, 0f, true) == (false, false) && AbilityStickPolicy.Next(true, true, 0.9f, float.NaN, true) == (false, false));
 Check("ability-paused-held-releases", AbilityStickPolicy.Next(true, true, 0.9f, 0f, false) == (false, false));
+
+// --- D-211 (BUG-203): snap turn is a real view turn with exactly three choices (off / 30 / 45)
+Check("snap-turn-offers-exactly-three-choices",
+    SnapTurnPolicy.Choices.Length == 3 && SnapTurnPolicy.IsChoice(0f) && SnapTurnPolicy.IsChoice(30f) && SnapTurnPolicy.IsChoice(45f));
+Check("snap-turn-unlisted-value-resolves-to-thirty-not-silently",
+    SnapTurnPolicy.Resolve(60f) == 30f && SnapTurnPolicy.Resolve(float.NaN) == 30f && SnapTurnPolicy.Resolve(-30f) == 30f);
+Check("snap-turn-listed-values-pass-through",
+    SnapTurnPolicy.Resolve(0f) == 0f && SnapTurnPolicy.Resolve(30f) == 30f && SnapTurnPolicy.Resolve(45f) == 45f);
+Check("snap-turn-off-means-the-stick-does-nothing",
+    SnapTurnPolicy.Next(true, 0.95f, SnapTurnPolicy.Resolve(0f), out bool offArmed) == 0f && offArmed);
+Check("snap-turn-each-choice-steps-that-many-degrees",
+    SnapTurnPolicy.Next(true, 0.95f, 30f, out _) == 30f && SnapTurnPolicy.Next(true, -0.95f, 45f, out _) == -45f);
+Check("snap-view-yaw-wraps-at-half-a-turn",
+    Near(HandAimMath.WrapYaw(190f), -170f) && Near(HandAimMath.WrapYaw(-190f), 170f) &&
+    Near(HandAimMath.WrapYaw(180f), 180f) && Near(HandAimMath.WrapYaw(360f), 0f) && Near(HandAimMath.WrapYaw(float.NaN), 0f));
+Check("snap-view-yaw-accumulates-and-wraps-exactly",
+    Near(HandAimMath.AddYaw(0f, 45f), 45f) && Near(HandAimMath.AddYaw(45f, 45f), 90f) &&
+    Near(HandAimMath.AddYaw(90f, 45f), 135f) && Near(HandAimMath.AddYaw(135f, 45f), 180f) &&
+    Near(HandAimMath.AddYaw(180f, 45f), -135f) && Near(HandAimMath.AddYaw(-135f, -45f), 180f) &&
+    Near(HandAimMath.AddYaw(30f, -30f), 0f));
 Check("ability-inactive-down-does-not-start", AbilityStickPolicy.Next(false, false, -0.9f, 0f, false) == (false, false));
 using (var bindingData = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "config", "bindings.json"))))
 {
@@ -388,18 +408,35 @@ Check("source-shadow-persistent-and-restored", uiSrc.Contains("HudTranslucentPan
 Check("source-layout-render-share-offset-target", uiSrc.Contains("UiHeadTarget(headPos, headRot, c.Distance)") && uiSrc.Contains("UiHeadTarget(pos, rot, c.Distance) - hudRect.TransformVector") && uiSrc.Contains("HudLayoutPolicy.ClampVerticalOffset(UiVerticalOffset)"));
 Check("source-ui-config-and-pose-diagnostics", host.Contains("handAim.HideHudBackdrop") && host.Contains("Config.UiVerticalOffset") && driver.Contains("capturedRestLocal =") && driver.Contains("currentLocal =") && driver.Contains("currentWorld ="));
 
-// D-202 (BUG-202): pin the wiring, not just the maths. The frame is one key, one composition base, one rest capture,
-// and the head frame refuses the legacy snap instead of jolting the picture without turning it.
+// D-202 (BUG-202): pin the wiring, not just the maths. The frame is one key, one composition base, one rest capture.
+// D-211 (BUG-203): the head frame now TURNS the view - the same view-yaw offset is composed into both eyes and handed
+// to HandAim as the composition base, and it is reset whenever a new anchor is captured.
 Check("source-hand-pose-frame-key-and-default",
     host.Contains("public string HandPoseFrame { get; set; } = \"Head\";") && host.Contains("invalid hand pose frame: Head|Anchor"));
 Check("source-hand-frame-selects-the-composition-base",
-    host.Contains("Quaternion handPoseBase = (handPoseAnchorFrame ? anchorRotation : Quaternion.identity);") && host.Contains("HAND_FRAME "));
+    host.Contains("Quaternion handPoseBase = (handPoseAnchorFrame ? anchorRotation : ViewYawRotation);") && host.Contains("HAND_FRAME "));
 Check("source-rest-capture-uses-the-same-frame-as-the-drive",
     driver.Contains("RestCaptureFrame(poseBaseRotation, pose, slot.SampleActive)") && driver.Contains("restCapturedWithPose =")
     && !driver.Contains("HandAimMath.Relative(Rotation(source.transform.rotation)") && handAimSrc.Contains("PoseRotation(poseBaseRotation, hand)"));
-Check("source-head-frame-snap-is-refused-loudly",
-    host.Contains("if (degrees != 0f && !handPoseAnchorFrame)") && host.Contains("SNAP ignored on the head frame"));
+Check("source-head-frame-snap-turns-the-view-not-the-anchor",
+    host.Contains("snapViewYaw = HandAimMath.AddYaw(snapViewYaw, degrees);")
+    && host.Contains("private Quaternion ViewYawRotation => snapViewYaw == 0f ? Quaternion.identity : Quaternion.AngleAxis(snapViewYaw, Vector3.up);")
+    && host.Contains("Vector3 val2 = val + (snapViewYaw == 0f ? eyeOffset : viewYaw * eyeOffset);")
+    && host.Contains("Quaternion val3 = (snapViewYaw == 0f ? eyeRotation : viewYaw * eyeRotation);")
+    && !host.Contains("SNAP ignored on the head frame"));
+Check("source-snap-view-yaw-is-reset-with-every-new-anchor",
+    System.Text.RegularExpressions.Regex.Matches(host, "anchorRotation = \\(\\(Component\\)source\\)\\.transform\\.rotation;\\s*\\r?\\n\\s*ResetSnapView\\(\\);").Count == 4);
+Check("source-snap-turn-step-is-one-of-three-choices-and-logged",
+    host.Contains("snapStepDegrees = SnapTurnPolicy.Resolve(Config.SnapTurnDegrees);")
+    && host.Contains("is not one of the shipped choices (0, 30, 45); using ")
+    && host.Contains("handAim.SnapDegrees = snapStepDegrees;"));
+Check("source-snap-receipt-exposes-the-view-yaw",
+    host.Contains("snapTurnDegrees = snapStepDegrees,") && host.Contains("snapViewYaw = snapViewYaw,") && host.Contains("snapTurnsApplied = snapAppliedTurns,"));
 Check("source-schema-lists-the-hand-pose-frame", schema.Contains("\"HandPoseFrame\"") && schema.Contains("\"enum\": [\"Head\", \"Anchor\"]"));
+Check("source-schema-lists-the-three-snap-turn-choices",
+    schema.Contains("\"SnapTurnDegrees\"") && schema.Contains("\"enum\": [0, 30, 45]"));
+Check("source-installer-ships-a-valid-snap-step",
+    File.ReadAllText(Path.Combine(root, "installer", "install.ps1")).Contains("SnapTurnDegrees = 30"));
 
 
 

@@ -268,6 +268,38 @@ public static class HostConfigTool
         root.Remove("FovScale");
     }
 
+    // D-211 (user request 2026-10-20: "스냅턴을 추가하고, 각도를 30도 혹은 45도, 비활성화 3가지로 나눠 옵션으로"):
+    // the right-stick snap turn, with exactly three shipped choices. 0 = off (the stick does nothing), 30 = the
+    // shipped default, 45 = the wider step. The host (OpenXrHost.Initialize) resolves the same three values and
+    // logs any other number before falling back to 30, so this tool can never write a step the player did not pick.
+    public const float DefaultSnapTurnDegrees = 30f;
+    public static readonly float[] SnapTurnChoices = { 0f, 30f, 45f };
+
+    // Returns null when the key is absent, which means "keep the host's shipped 30".
+    public static float? ReadSnapTurnDegrees(JsonObject root)
+    {
+        if (root["SnapTurnDegrees"] is not JsonValue value) return null;
+        // A value written by ApplySnapTurnDegrees is a float; a hand-edited file may hold a double, a whole
+        // number or a stringified number, so the same fallback ladder the FOV keys use applies here.
+        if (value.TryGetValue(out float single)) return single;
+        if (value.TryGetValue(out double number)) return (float)number;
+        if (value.TryGetValue(out long whole)) return whole;
+        if (value.TryGetValue(out string? text) && float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float parsed)) return parsed;
+        return null;
+    }
+
+    public static string? ValidateSnapTurnDegrees(float value) =>
+        Array.IndexOf(SnapTurnChoices, value) < 0
+            ? "invalid snap turn: use 0 (off), 30 or 45 degrees"
+            : null;
+
+    public static void ApplySnapTurnDegrees(JsonObject root, float value)
+    {
+        string? error = ValidateSnapTurnDegrees(value);
+        if (error != null) throw new ArgumentException(error);
+        root["SnapTurnDegrees"] = value;
+    }
+
     public static string Save(string path, JsonObject root, DateTime? stamp = null)
     {
         string backup = path + "." + (stamp ?? DateTime.UtcNow).ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture) + ".bak";

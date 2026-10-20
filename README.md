@@ -49,7 +49,7 @@ Right-handed layout only. Your hands are tracked; the triggers fire the weapon i
 | Right stick up | Blood ability (`F`) |
 | Right stick down | Special ability / scout dash (`SHIFT`) |
 | Right stick click | Right robot arm (`E`) |
-| Right stick left/right | Snap turn (30°) — **not available in this build**, see the note below |
+| Right stick left/right | Snap turn — 30° per push by default; 45° or off in `VhvrSettings.exe` |
 | Right trigger | Right-hand weapon: primary fire |
 | Right A (lower face) | Jump (`SPACE`); in menus it confirms |
 | Right B (upper face) | Same as left Y, for the right hand: reload close to your head, secondary fire further away |
@@ -66,7 +66,7 @@ Right-handed layout only. Your hands are tracked; the triggers fire the weapon i
 
 ### Two things to know
 
-- **Snap turn does nothing by default.** With the shipped hand pose frame (`HandPoseFrame=Head`) the right stick's left/right snap turn is refused on purpose so the view never jumps; turning is done with your body (`BUG-203`). The old behaviour is only available with `HandPoseFrame=Anchor`.
+- **Snap turn.** Right stick left/right turns you in a step — **30°** (default), **45°**, or **off**. Choose it in `VhvrSettings.exe` → *Snap turn (right stick)*, or edit `SnapTurnDegrees` (`0` / `30` / `45`) in `BepInEx\config\vhvr-openxr-host.json` with the game closed. One step per push, and you stay in the same spot: the view turns, your position in the level does not move. **The step sizes and the turn itself are new in this source tree and have not been tried in a headset yet** — `BUG-203` is the entry to read after your next session.
 - **Engineer turret.** The build-mode buttons (grip to cycle the turret type, both grips to place it) exist in the code, but I have **not been able to confirm in the headset that the Engineer's turret actually builds and places correctly**, so treat that one class as unverified.
 
 
@@ -79,7 +79,7 @@ The playable package is published under **Releases**, not committed to this repo
 - Checksums: `VampireHuntersVR-0.9.5.sha256.txt` next to the asset.
 - Korean user guides: `installer/README-KO.md` (usage) and `installer/SETTINGS-README-KO.md` (the settings tool).
 
-Release binaries in that package are byte-identical to the set the author tested in the headset; the source tree in this repository is what produced them (no source edits were made for packaging — only user-facing documents differ).
+Release binaries in that package are byte-identical to the set the author tested in the headset, and were built from the tree at tag `v0.9.5`. Work that landed after that tag — the D-211 snap turn (off / 30° / 45°), for example — is **not** part of the published 0.9.5 package until a new release is cut.
 
 ## Repository contents
 

@@ -3939,3 +3939,14 @@ Chose: 사용자 지시로 소스 트리를 "비공개 로컬 검토본"에서 �
 Changed: README/THIRD-PARTY-NOTICES/installer README 재작성(비공개·업로드 금지 문구 제거, 알려진 한계 명시), installer의 preview/rc1 표기를 0.9.5로 정리, 라이선스 텍스트 5종을 licenses/에 포함. 하드코딩된 게임/시뮬레이터 경로는 환경변수 VHVR_GAME_ROOT / VHVR_XR_SIM_JSON(기본값은 표준 Steam 경로)로 대체. 문서의 작성자 로컬 경로는 <RepoRoot>, <GameRoot>, <Recordings>, %LOCALAPPDATA% 등 플레이스홀더로 치환.
 Boundary: 이 정리는 소스 사본(별도 폴더)에만 적용했다. 원본 프로젝트와 설치된 모드는 변경하지 않았다. 헤드셋 수락(D-202/D-206/D-207)과 크래시 안정성은 여전히 미검증이다. 이 결정은 바이너리 패키지(BepInEx/런타임 포함 ZIP)의 공개 배포를 허용하지 않는다. 게임 파일, BepInEx/런타임 바이너리, 게임에서 생성한 interop은 저장소에 넣지 않는다.
 Cost/next: .git 히스토리는 아직 없다. 저장소를 만들 때는 새로 git init 해 작성자 경로가 히스토리에 남지 않도록 한다.
+
+### D-211 — 스냅 턴 3택(끄기 / 30° / 45°)을 실제 "시야 회전"으로 구현 (2026-10-20)
+Date: 2026-10-20 | Stage: Stage 9 comfort / BUG-203 fix
+Chose: 사용자 요청("스냅턴을 추가하고, 각도를 30도 혹은 45도, 비활성화 3가지로 나눠 옵션으로 넣어줘")대로, 헤드 프레임(기본)에서 오른쪽 스틱 좌/우가 **시야를 실제로 회전**하게 하고 각도를 0/30/45 세 가지로 제한한다. 0 = 끄기, 30 = 기존 기본값, 45 = 넓은 스텝.
+Why: D-202가 헤드 프레임에서 스냅 요청을 거부한 이유는 회전 없이 화면만 튀는 것을 막기 위해서였다. D-195 이후 눈 카메라는 `anchorRotation`을 합성에 쓰지 않으므로, 앵커를 돌리는 레거시 경로로는 시야가 돌지 않는다(BUG-203). 세션 view-yaw 오프셋을 눈/손 합성에 직접 곱하는 것이 그 뿌리에 맞는 수정이다.
+How: `OpenXrHost.snapViewYaw`((-180,180] 랩)를 `ApplySnap`에서 누적 → `PrepareCameras`가 두 눈 오프셋과 두 눈 회전에 곱하고, `LateUpdate`는 같은 회전(`ViewYawRotation`)을 HandAim 합성 base로 넘긴다. 앵커는 불변이므로 플레이어 위치가 튀지 않는다. 새 앵커 4곳에서 `ResetSnapView()`. 각도는 `SnapTurnPolicy.Choices`(0/30/45)로 고정하고 미등록 값은 30으로 해석 + 경고 1줄(조용한 다운그레이드 없음). 노출: `VhvrSettings.exe` 라디오 3개, `config\schema.json` enum, `installer\install.ps1` 주석, 영수증 `snapViewYaw`/`snapTurnsApplied`/`handFrame`.
+Alternatives rejected: (a) 앵커 회전 유지 — 시야가 안 돌고 위치만 튄다(구 BUG-203 그대로), (b) `HandPoseFrame=Anchor`를 기본으로 — BUG-202의 90° 손 꺾임이 재발, (c) 아날로그 스무스 턴 — 사용자가 3택(끄기/30/45)을 명시했고 Q-015/D-013이 스냅 전용을 이미 확정.
+Numbering: D-209는 라이선스 결정(D-209)이 이미 사용 중이라 이 작업은 D-211로 기록하며, 같은 날 작성한 코드/테스트/문서 주석도 D-211로 정정했다.
+Verified (offline): 플러그인 빌드 경고 0/오류 0; `tests\HandAim` 238/238; `tests\Settings` 13/13; `VhvrSettings --selftest` PASS(snap=30); `--form-selftest` PASS(controls=33, clipped=0).
+Boundary: **헤드셋 미검증**. 회전각·위치 고정·전방 이동이 함께 도는지는 착석 1회가 필요하다(`docs\playtests\PLAYTEST-D211-SNAPTURN-KO.md`). 패키지/릴리스에는 아직 반영하지 않았다.
+Cost/next: 다음 착석에서 판정 3종을 통과하면 0.9.6 후보로 패키징하고, VhvrSettings/README/릴리스 노트에 같은 3택을 싣는다.

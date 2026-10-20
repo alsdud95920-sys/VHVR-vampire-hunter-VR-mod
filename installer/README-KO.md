@@ -10,7 +10,7 @@
 
 
 Vampire Hunters(Steam, 빌드 22267731)를 VR 헤드셋에서 양손 6DoF으로 플레이하는 비공식 모드입니다.
-포션·상자 위치 표시(화살표), 화면 설정 도구(`VhvrSettings.exe`: 해상도 / In-VR UI / 눈당 MSAA), 그리고 2026-10-14 추가된 5가지 개선(별도 패치 플러그인 `VhvrExtras.dll`)이 들어 있습니다.
+포션·상자 위치 표시(화살표), 화면 설정 도구(`VhvrSettings.exe`: 해상도 / In-VR UI / 눈당 MSAA / 스냅 턴), 그리고 2026-10-14 추가된 5가지 개선(별도 패치 플러그인 `VhvrExtras.dll`)이 들어 있습니다.
 **메인 메뉴부터 VR로 시작합니다**(`MenuFirst=true`). 스테이지 카메라가 생기면 호스트가 게임플레이 손·무기 통합을 설치하도록 되어 있습니다. 실제 전환/손 조작은 아래 헤드셋 테스트 항목에 따라 확인이 필요합니다.
 
 ## 0.6 → 0.7 변경 (Quality 다이얼 제거, MSAA 노출)
@@ -32,7 +32,7 @@ Vampire Hunters(Steam, 빌드 22267731)를 VR 헤드셋에서 양손 6DoF으로 
 2. **모니터에서** 마우스로 플레이 → 스테이지 선택 → 시작.
 3. 스테이지가 시작되면 헤드셋을 쓰면 VR 화면입니다. 포션·상자는 화살표로 표시됩니다.
 
-## 화면 설정 (`VhvrSettings.exe`, 3개 항목)
+## 화면 설정 (`VhvrSettings.exe`, 4개 항목)
 `VhvrSettings.exe`를 **게임을 끄고** 실행합니다. **`install.bat`과 같은 폴더**에 있고 (같은 폴더의 .dll/.json 파일이 함께 있어야 함), `install.bat` 실행 후에는 설치한 게임의 설정 파일을 자동으로 찾습니다.
 
 1. **화면 크기(눈 렌더 해상도)** — `EyePreset` / `EyeWidth` / `EyeHeight` / `EyeScale`
@@ -44,8 +44,16 @@ Vampire Hunters(Steam, 빌드 22267731)를 VR 헤드셋에서 양손 6DoF으로 
    | Custom 0.5~2.0 | 배율 x 1920x1080 | 배율 x 3840x2160 |
 2. **In-VR UI size** — `uiScale` (0.50–3.00, 기본 1.50)
 3. **Eye MSAA** — `EyeMsaa` (1 = off, 2 / 4 / 8 = 그만큼 샘플, 기본 4)
+4. **Snap turn (right stick)** — `SnapTurnDegrees` (0 = 끄기 / 30 = 기본 / 45 = 넓게). 아래 절 참고.
 
 큰 값일수록 선명하지만 프레임이 떨어지고, MSAA는 더 많은 샘플 = 매끄러운 가장자리 + GPU 비용. 설정 파일: `<게임>\BepInEx\config\vhvr-openxr-host.json`. 도구는 저장 전에 `.bak` 백업을 만듭니다. 자세한 내용은 `SETTINGS-README-KO.md`.
+
+## 스냅 턴 (D-211) — 소스 트리에 추가, 다음 빌드부터 포함
+- **오른쪽 스틱 좌/우**를 밀면 시야가 한 번에 **30°**(기본), **45°**, 또는 **꺼짐**으로 돕니다. 한 번 밀 때 한 칸이고, 스틱을 놓았다가 다시 밀어야 다음 칸입니다(진입 ≥0.7 / 재무장 <0.3, 좌우만·위아래와 겹치지 않게 축 우세 규칙).
+- **제자리에서 돕니다.** 시야(두 눈의 위치 오프셋과 회전)만 돌고 플레이어가 서 있는 자리는 그대로입니다. 앞으로 밀면 새 방향으로 이동합니다.
+- 바꾸는 방법: `VhvrSettings.exe` → **Snap turn (right stick)** 에서 Off / 30 deg / 45 deg 선택. 또는 게임을 끄고 `BepInEx\config\vhvr-openxr-host.json`의 `"SnapTurnDegrees"`를 `0` / `30` / `45` 로 수정. 목록에 없는 값(예: 60)은 **30으로 동작하고 로그에 경고 1줄**을 남깁니다(조용히 바뀌지 않음).
+- 영수증: `%LOCALAPPDATA%\VampireHuntersVR\run\host.json`의 `snapTurnDegrees` / `snapViewYaw` / `snapTurnsApplied`.
+- **주의 (정직)**: 이 기능은 공개된 **0.9.5 ZIP에는 아직 없습니다.** 소스 트리(D-211)에만 있고, 헤드셋에서 아직 확인하지 않았습니다. 착석 판정 항목은 `docs\playtests\PLAYTEST-D211-SNAPTURN-KO.md`.
 
 ## 5가지 개선 (`VhvrExtras.dll`, 2026-10-14) — **아직 헤드셋 미검증**
 설정 파일: `<게임>\BepInEx\config\local.vampirehuntersvr.extras.cfg` (첫 실행 시 자동 생성).
@@ -59,6 +67,7 @@ Vampire Hunters(Steam, 빌드 22267731)를 VR 헤드셋에서 양손 6DoF으로 
 
 ## 알려진 한계 (정직)
 - **2026-10-14 추가된 5가지 개선은 아직 헤드셋으로 확인하지 않았습니다.** 코드가 후킹에 성공했다는 것(로그 `PATCH_APPLIED`)과 실제 동작은 다릅니다. 확인 항목과 절차는 번들의 `docs`가 아니라 프로젝트 문서(`docs\playtests\PLAYTEST-EXTRAS-KO.md`)에 있습니다.
+- **스냅 턴(D-211, 끄기/30°/45°)은 소스 트리에만 있고 헤드셋 미검증입니다.** 공개된 0.9.5 ZIP에는 포함되지 않습니다.
 - 메인 메뉴→스테이지 전환은 별도 검증이 필요합니다. 스테이지 진입 뒤 손 조준/무기가 나타나지 않으면 `hand-aim.json`과 BepInEx 로그를 수집해 원인을 확인해야 합니다. `MenuFirst=true`여도 입자·UI·게임플레이 훅이 실제 작동한다는 것은 플레이테스트 전까지 확정이 아닙니다.
 - 쿨타임 햅틱은 게임의 실제 쿨다운을 읽은 값이 아니라 무기 연사율로 계산한 근사 시점입니다.
 - 이 번들의 코드는 0.6-final에서 `GraphicsQuality` 관련 코드·설정·UI를 모두 제거하고 src를 다시 빌드했습니다(0.7, D-187). 포션/상자 마커·화면 크기·In-VR UI·MSAA는 그 시점에 사용자 착용 확인을 받았지만, **이 번들 자체를 헤드셋으로 다시 실행해 본 것은 아닙니다.**

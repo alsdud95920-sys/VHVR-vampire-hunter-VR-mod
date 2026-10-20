@@ -269,5 +269,38 @@ string marker = path + ".safe-mode";
         Assert(HostConfigTool.ReadFovScaleX(fresh) == null);
         Assert(HostConfigTool.ReadFovScaleY(fresh) == null);
     });
+    Check("D-211 snap turn reads, validates and writes only the three choices", () => {
+        // Absent key -> null (the form shows the shipped 30); a hand-edited 60 is refused by the validator and
+        // ApplySnapTurnDegrees writes nothing for it.
+        File.WriteAllText(hostPath, "{\"Enabled\":true,\"HandAim\":true}");
+        JsonObject root = HostConfigTool.Load(hostPath);
+        Assert(HostConfigTool.ReadSnapTurnDegrees(root) == null);
+        Assert(HostConfigTool.ValidateSnapTurnDegrees(0f) == null && HostConfigTool.ValidateSnapTurnDegrees(30f) == null && HostConfigTool.ValidateSnapTurnDegrees(45f) == null);
+        Assert(HostConfigTool.ValidateSnapTurnDegrees(60f) != null && HostConfigTool.ValidateSnapTurnDegrees(-30f) != null && HostConfigTool.ValidateSnapTurnDegrees(float.NaN) != null);
+        try { HostConfigTool.ApplySnapTurnDegrees(root, 60f); throw new Exception("invalid snap turn applied."); }
+        catch (ArgumentException) { }
+        // Every listed choice lands in the file, and every other key stays exactly as it was.
+        HostConfigTool.ApplySnapTurnDegrees(root, 0f);
+        HostConfigTool.Save(hostPath, root, new DateTime(2026, 10, 20, 0, 0, 0, DateTimeKind.Utc));
+        JsonObject written = HostConfigTool.Load(hostPath);
+        Assert(HostConfigTool.ReadSnapTurnDegrees(written) == 0f);
+        Assert(written["Enabled"]?.GetValue<bool>() == true && written["HandAim"]?.GetValue<bool>() == true);
+        root = HostConfigTool.Load(hostPath);
+        HostConfigTool.ApplySnapTurnDegrees(root, 45f);
+        HostConfigTool.Save(hostPath, root, new DateTime(2026, 10, 20, 0, 0, 1, DateTimeKind.Utc));
+        written = HostConfigTool.Load(hostPath);
+        Assert(HostConfigTool.ReadSnapTurnDegrees(written) == 45f);
+        Console.WriteLine("PASS d211-snap-turn-off-round-trip-and-keys");
+        // A stringified number in a hand-edited file still reads (the same ladder the FOV keys use).
+        File.WriteAllText(hostPath, "{\"Enabled\":true,\"SnapTurnDegrees\":\"45\"}");
+        Assert(HostConfigTool.ReadSnapTurnDegrees(HostConfigTool.Load(hostPath)) == 45f);
+    });
+    Check("D-211 form selftest surface still loads with the snap row", () => {
+        // The window is exercised by --form-selftest at build time; here we only pin the three-choice contract the
+        // form writes, so a later edit to the radio group cannot silently drop a choice.
+        Assert(HostConfigTool.SnapTurnChoices.Length == 3 && HostConfigTool.SnapTurnChoices[0] == 0f &&
+            HostConfigTool.SnapTurnChoices[1] == 30f && HostConfigTool.SnapTurnChoices[2] == 45f);
+        Assert(HostConfigTool.DefaultSnapTurnDegrees == 30f);
+    });
     Console.WriteLine($"RESULT {passed} passed, 0 failed; pure config/marker/resolution/MSAA fixtures; no BepInEx/game/Unity execution.");
     return 0;

@@ -326,6 +326,21 @@ internal static class SnapTurnPolicy
     public const float PressAt = 0.7f;
     public const float ReleaseAt = 0.3f;
 
+    // D-211 (user request 2026-10-20: "스냅턴을 추가하고, 각도를 30도 혹은 45도, 비활성화 3가지로 나눠 옵션으로"):
+    // exactly three shipped choices. 0 = off (the stick does nothing), 30 = the value 0.9.x shipped on paper,
+    // 45 = the wider step some seated players prefer. No other value is a choice; the host resolves an unlisted
+    // value to 30 and says so in the log and the receipt, so a hand-edited file can never turn a silent downgrade.
+    public const float Off = 0f;
+    public const float Thirty = 30f;
+    public const float FortyFive = 45f;
+    public const float Default = Thirty;
+    public static readonly float[] Choices = { Off, Thirty, FortyFive };
+
+    public static bool IsChoice(float degrees) => Array.IndexOf(Choices, degrees) >= 0;
+
+    // Unlisted / non-finite -> the shipped 30 degrees. Callers compare the input with the result to log the fallback.
+    public static float Resolve(float configured) => float.IsFinite(configured) && IsChoice(configured) ? configured : Default;
+
     // Returns the signed degrees to turn now (0 = none). Positive stick X = turn right (clockwise seen from above).
     public static float Next(bool armed, float stickX, float degrees, out bool armedAfter)
     {
@@ -403,6 +418,21 @@ internal sealed class TurretGripPolicy
 
 internal static class HandAimMath
 {
+    // D-211 (BUG-203): the head-frame snap turn is a session view-yaw offset, not an anchor rotation (D-195 composes
+    // the eyes from the anchor position + the runtime pose and ignores anchorRotation). The accumulated offset is kept
+    // in (-180, 180] so a long session cannot grow it without bound and a wrap is exact: 45 + 45 + 45 + 45 = 180,
+    // 45 + 45 + 45 + 45 + 45 = -135 (turning past half a turn is the same view, mirrored in the numbers only).
+    public static float WrapYaw(float degrees)
+    {
+        if (!float.IsFinite(degrees)) return 0f;
+        float wrapped = degrees % 360f;
+        if (wrapped > 180f) wrapped -= 360f;
+        if (wrapped <= -180f) wrapped += 360f;
+        return wrapped + 0f; // +0f turns -0 into +0 so equality and receipts read the same
+    }
+
+    public static float AddYaw(float current, float degrees) => WrapYaw(WrapYaw(current) + degrees);
+
     // D-099: yaw the VR anchor about world-up through the tracked head so the head's world point does not move.
     // headLocal is the head position in the anchor's local (Unity-mapped) frame.
     public static void SnapAnchor(float[] anchorPosition, float[] anchorRotation, float[] headLocal, float degrees,
