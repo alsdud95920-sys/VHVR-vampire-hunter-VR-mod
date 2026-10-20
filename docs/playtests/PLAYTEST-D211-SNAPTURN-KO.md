@@ -8,6 +8,7 @@
 - 설치본: `F:\SteamLibrary\steamapps\common\Vampire Hunters`
 - 덮어쓴 파일: `BepInEx\plugins\VampireHuntersVR.Stage0.dll`(440,320 B, SHA-256 `129361927619F42C3A625D99EB85EB04B781DF981690C104D17FB4F35BE85F2F`), `VampireHuntersVR-0.9.5-rc1\VhvrSettings.*`(3택 UI), 같은 폴더의 `install.ps1` / `README-KO.md` / `SETTINGS-README-KO.md`
 - 백업: `F:\VRMods\backup\20261021T003925-d211-deploy` (같은 상대 경로로 되돌리면 rc1 상태 복구)
+- 배포 스크립트: `scripts\deploy-dev.ps1 -GameRoot '<게임 폴더>'` (덮어쓰기 전 자동 백업 + 매니페스트 해시 갱신)
 - 안내문: 설치본 `VampireHuntersVR-0.9.5-rc1\UPDATE-D211-KO.txt`
 - 라이브 설정: `SnapTurnDegrees=30`, `HandPoseFrame=Head` (배포 전과 해시 동일, 손대지 않음)
 
