@@ -58,6 +58,7 @@ Projects: `HandAim`, `GameplayCamera`, `WeaponRuntime`, `VhvrExtras`, `FlameEndp
 
 The playable package is published under **Releases**, not committed to this repository (`dist/` is git-ignored; the binaries live as a release asset).
 
+- Release page: <https://github.com/alsdud95920-sys/VHVR-vampire-hunter-VR-mod/releases/tag/v0.9.5>
 - Asset: `VampireHuntersVR-0.9.5.zip` — BepInEx 6 plugin, native OpenXR host, `VhvrSettings.exe`, install/uninstall scripts and the third-party licenses.
 - Checksums: `VampireHuntersVR-0.9.5.sha256.txt` next to the asset. Verify before installing:
 
