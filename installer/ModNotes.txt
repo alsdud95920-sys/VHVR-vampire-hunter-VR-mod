@@ -15,6 +15,18 @@ v0.9.6 changes (D-211) - snap turn:
   stayed put, and hands / weapon / reticle turned with it. 45 degrees and off use the same code path
   with a different step value but were not worn separately.
 
+v0.9.6 repack (2026-10-22, D-212) - reward backdrops restored:
+- Level-up, treasure-chest and boss-chest cards again show the game's own black semi-transparent
+  backdrop behind the card panel. The backdrop culler/dimmer now runs only in the explicit
+  'hide' / 'dim' modes; the shipped default 'authored' leaves the game's own panels exactly as drawn.
+- The normal stage HUD still has no backdrop panel (unchanged), and the pause / win / results /
+  gameover backgrounds are the game's own again.
+- Headset check (2026-10-22, author): backdrop visible behind level-up and chest cards, absent on the
+  stage HUD.
+- Recommendation: if in-VR text or panels are hard to read, set Render FOV scale X to the minimum
+  (0.50) in VhvrSettings.exe. A narrower FOV magnifies the whole image, so the menu, HUD and cards
+  become bigger without changing In-VR UI size.
+
 Unchanged from v0.9.5: VhvrNativeHost.dll and VhvrExtras.dll are byte-identical; only Stage0 and
 VhvrSettings were rebuilt. Installer defaults: HandPoseFrame=Head, TurretCycle=Stick, SnapTurnDegrees=30.
 

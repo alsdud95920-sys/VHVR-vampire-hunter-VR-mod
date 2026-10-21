@@ -22,8 +22,11 @@ Download: <https://github.com/alsdud95920-sys/VHVR-vampire-hunter-VR-mod/release
    - **In-VR UI size**: 0.50–3.00 (default 1.50)
    - **Eye MSAA**: 1 (off) / 2 / 4 (default) / 8
    - **Anisotropic filtering**: off (default) / on (16x)
+   - **Render FOV scale X / Y**: 0.50–1.00 (default 0.85 / 1.00). `1.00` passes the runtime FOV through; lower values narrow the rendered field of view, which magnifies everything on screen.
 
    Bigger values look sharper and cost frame time. Settings are read once at game start, so change them with the game closed.
+
+> **Recommended for readability: set Render FOV scale X to the minimum (0.50).** A narrower FOV enlarges the whole image, so the in-VR menu, HUD and level-up / chest cards become clearly bigger and easier to read — no other setting has to change. It also draws fewer pixels, so it is cheaper for the GPU. If you prefer the widest view, leave it at 0.85.
 5. Connect the headset (Virtual Desktop), then start the game from Steam. The first launch takes one to three minutes.
 6. VR starts in the main menu. Pick a stage with the in-VR panel (or on the monitor), and the run starts in VR.
 
