@@ -256,7 +256,7 @@
 | 오프라인 검증 | `tests\HandAim` 238/238, `tests\Settings` 13/13, 플러그인 빌드 경고 0/오류 0 |
 | 헤드셋 검증 | **통과** — 30° 회전, 몸(위치) 고정, 손·무기·리티클 동반 회전. 45°/끄기는 미착용(같은 경로의 다른 값) |
 | 패키지 | `dist\VampireHuntersVR-0.9.6.zip` **35,666,579 B**, SHA256 `325DAEC60F9B19B7DDAFF8789A0075EEA7411D4FB575A2CB050329EC6B1F6FB1` (`scripts\pack-release.ps1 -Version 0.9.6`, 0.9.5 ZIP 기반). 설치→237파일→제거 왕복 PASS |
-| 배포 | 로컬 설치본은 D-211 배포본 그대로(패키지 DLL과 동일 SHA). GitHub Release `v0.9.6` |
+| 배포 | 로컬 설치본은 D-211 배포본 그대로(패키지 DLL과 동일 SHA). GitHub Release `v0.9.6` — [릴리스](https://github.com/alsdud95920-sys/VHVR-vampire-hunter-VR-mod/releases/tag/v0.9.6) id `419911553` (draft 아님), ZIP digest `sha256:325daec60f9b19b7ddaff8789a0075eea7411d4fb575a2cb050329ec6b1f6fb1` = 로컬 해시 |
 
 
 
