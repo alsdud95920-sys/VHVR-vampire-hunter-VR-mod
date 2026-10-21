@@ -1,0 +1,101 @@
+Vampire Hunters VR - v0.9.6 (2026-10-22)
+========================================
+
+v0.9.6 changes (D-211) - snap turn:
+- Right stick left/right now turns your view in a step: 30 degrees (default), 45 degrees, or off.
+  Choose it in VhvrSettings.exe -> 'Snap turn (right stick)', or edit SnapTurnDegrees (0 / 30 / 45)
+  in BepInEx\config\vhvr-openxr-host.json with the game closed. A value outside that list runs as 30
+  and leaves one warning line in the log (no silent downgrade).
+- The turn is a real view rotation: both eye offsets and both eye rotations get a session view-yaw
+  offset, and the hands, weapon and reticle are composed on the same rotation. Your body does not move,
+  so forward on the left stick follows the new heading. Capturing a new anchor resets the offset.
+- Receipt fields in %LOCALAPPDATA%\VampireHuntersVR\run\host.json: handFrame, snapTurnDegrees,
+  snapViewYaw, snapTurnsApplied; the 10-frame evidence also carries viewYaw.
+- Headset check (2026-10-22): 30 degrees confirmed by the author - the view turned one step, the body
+  stayed put, and hands / weapon / reticle turned with it. 45 degrees and off use the same code path
+  with a different step value but were not worn separately.
+
+Unchanged from v0.9.5: VhvrNativeHost.dll and VhvrExtras.dll are byte-identical; only Stage0 and
+VhvrSettings were rebuilt. Installer defaults: HandPoseFrame=Head, TurretCycle=Stick, SnapTurnDegrees=30.
+
+Mod license: GPL-3.0-or-later (LICENSE.txt). Third-party components: THIRD-PARTY-NOTICES.txt.
+
+--------------------------------------------------------------------------------
+
+Vampire Hunters VR - v0.9.5 (2026-10-20)
+========================================
+
+v0.9.5 changes (D-202 / D-206 / D-207):
+- Hand pose now uses the same frame as the eyes (HandPoseFrame=Head): fixes hands/weapons bent 90 degrees in gameplay.
+  Snap turn is not available in this mode.
+- Engineer turret: the build input can be cycled with the stick (TurretCycle=Stick).
+- Menu: the right-hand laser and click work again (native hand struct size fixed in VhvrExtras).
+  The same fix removes an 8-byte buffer overrun that is the likely cause of an earlier coreclr.dll crash.
+
+Tested by the author in one full headset session (menu -> stage -> back to menu) with no problems.
+Known: the BepInEx log repeats 'EnableHands returned 6/2 - retrying every frame' in menus. It is harmless
+(the controllers already work); it only makes LogOutput.log larger.
+
+Mod license: GPL-3.0-or-later (LICENSE.txt). Third-party components: THIRD-PARTY-NOTICES.txt.
+
+--------------------------------------------------------------------------------
+Vampire Hunters VR - v0.9.4 (2026-10-18)
+========================================
+
+v0.9.4 changes (D-200) - fixes the v0.9.3 black screen:
+- v0.9.3 started VR on the first frame that had a main camera, and on this game that is the *intro* scene, not
+  the menu. The game then loaded MainMenu_2, destroyed the intro camera, and the host kept submitting from a
+  dead source: the window froze on its last frame (windowFrames stopped) while the XR loop kept advancing.
+  In the headset that is a black image, which is exactly what was reported.
+- VR now waits for the intro to be over. StartupSkipScenes (default "Intro") names the scenes whose camera
+  must never become the eye source; StartupSettleSeconds (default 1.0) requires the active scene to have been
+  stable that long before its camera is adopted, so a scene that is still being loaded over can never be
+  adopted. The host logs STARTUP_SKIP while it waits and STARTUP_READY with the real elapsed seconds and the
+  scene it finally started in, and the wait stays inside the same [gameplayWaitSeconds] budget.
+- The menu branch re-adopts the scene's current main camera BEFORE its "no camera yet" early return, so
+  losing an adopted camera to a scene load can never again leave the host rendering a dead source.
+- What this fix needs from you: one in-headset run. The receipt
+  (%LOCALAPPDATA%\VampireHuntersVR\run\host.json) proves it: startupWait should say "intro scene 'Intro'",
+  scene/sourceCamera should be MainMenu_2 + ArenaCamera, and startupReadySeconds should be about the moment
+  the menu appeared (not 0.6 s). VR starting later than before is the intended fix, not a regression.
+- No gameplay behaviour changed; only when and in which scene VR begins.
+
+v0.9.3 changes (D-198):
+- VR now starts as soon as the game is ready instead of after a fixed 15-second wait. The host
+  used to skip its first 15 seconds of game time unconditionally (`Time.unscaledTime < 15f`)
+  before it ever initialised; that gate is gone. It now checks readiness every frame and starts
+  on the first frame where the main camera (and the D3D11 device) actually exist.
+- The wait is still bounded: startup waits at most [gameplayWaitSeconds], writes waiting.json
+  with the reason if the camera never appears, and logs STARTUP_READY with the real elapsed
+  seconds when it does. The in-headset result of this change still needs confirmation.
+- No gameplay behaviour changed; this only affects how soon VR begins after launch.
+
+v0.9 final changes (D-193):
+- Reconnect the pre-particle flame-emitter pin after PlayerController.Update; records `beforeParticlesCalls` in hand-aim.json. Source/policy guards pass; in-headset flame visual still needs confirmation.
+- Restored the requested main-menu-first VR default (`MenuFirst=true`); the existing Stage0 transition path is expected to install gameplay hands/weapons when the stage camera appears. Headset confirmation is still required.
+- Quest Touch / Virtual Desktop OpenXR controller profile remains the supported/test target; other headset controller profiles are deferred.
+
+v0.9 changes:
+- Menu-screen panel, controller ray, trigger selection, and stick scrolling are included. The default MenuFirst=true enters VR at the main menu; the Stage0 gameplay-camera handoff is intended to install hands/weapons when a stage starts.
+- The controller laser is now thicker and fully opaque (it was an 8 mm hairline that was easy
+  to miss in the headset). Point at a button and pull the trigger to click it.
+- NEW: thumbstick scrolling in the menu. Push the stick up/down while pointing at a scrollable
+  list and it scrolls (the game's own ScrollRect handles it). Speed is configurable:
+  [MenuScreen] ScrollSpeed = 3.0 (scroll notches per frame at full stick deflection).
+- Menu backdrop is disabled by default in this release (`MenuBlackout = false`), so the game
+  world remains visible behind the floating panel. The compatibility setting can be enabled in
+  `[MenuScreen]` if a black backdrop is preferred.
+- MenuFirst defaults to true to honor the main-menu VR startup requirement. Other controller profiles are deferred. The flame-emitter hook is connected and covered by offline checks; its visual behavior still needs in-headset confirmation.
+- NEW: the paused ESC/pause menu has its own size multiplier ([Ui] ScalePaused, default 1.0 =
+  its shipped 3.0 m width; 2.0 is recommended when the menu feels small).
+- Anisotropic filtering now ships ON (was OFF).
+- FovScaleX = 0.85 (slightly narrowed horizontal render FOV; FovScaleY unchanged at 1.0).
+- Settings.exe: the GraphicsQuality row is gone (the host uses the game's own quality level).
+  Anisotropic is a checkbox, MSAA is a 1/2/4/8 selector, FOV scale X/Y are sliders
+  (0.50-1.00 in 0.05 steps, value shown beside each slider).
+
+v0.8 changes (absorbed): FovScaleX / FovScaleY keys, Stage 3.5 native host.
+v0.7.1 changes (absorbed): anisotropic + MSAA keys exposed in Settings.exe.
+v0.7: baseline.
+
+Edit settings with VhvrSettings.exe (next to install.bat). Details: README-KO.md, SETTINGS-README-KO.md.

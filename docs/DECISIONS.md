@@ -3950,3 +3950,6 @@ Numbering: D-209는 라이선스 결정(D-209)이 이미 사용 중이라 이 �
 Verified (offline): 플러그인 빌드 경고 0/오류 0; `tests\HandAim` 238/238; `tests\Settings` 13/13; `VhvrSettings --selftest` PASS(snap=30); `--form-selftest` PASS(controls=33, clipped=0).
 Boundary: **헤드셋 미검증**. 회전각·위치 고정·전방 이동이 함께 도는지는 착석 1회가 필요하다(`docs\playtests\PLAYTEST-D211-SNAPTURN-KO.md`). 패키지/릴리스에는 아직 반영하지 않았다.
 Cost/next: 다음 착석에서 판정 3종을 통과하면 0.9.6 후보로 패키징하고, VhvrSettings/README/릴리스 노트에 같은 3택을 싣는다.
+
+Verified (헤드셋, 2026-10-22): 사용자 보고 — "시야가 30도 돌았고 몸 제자리, 손, 무기 레티클 다 같이 잘 돌았어". 회전각·위치 고정·손/리티클 동반 회전이 한 세션에서 확인됐다(A1/A2/B2). 45°·끄기는 같은 경로의 다른 값이라 별도 착석은 생략했다(미착용 상태로 명시).
+Changed (0.9.6, 2026-10-22): 공개 패키지 `VampireHuntersVR-0.9.6.zip`을 0.9.5 ZIP 기반으로 조립했다(Stage0 DLL + VhvrSettings + installer/README/ModNotes 교체, NativeHost·Extras는 0.9.5와 바이트 동일). `installer\install.ps1` manifest version 0.9.6, `SnapTurnDegrees=30` 기본. GitHub Release `v0.9.6`으로 게시.

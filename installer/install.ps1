@@ -185,7 +185,7 @@ $installed.Add([pscustomobject]@{
 
 $manifest = [ordered]@{
     mod = 'VampireHuntersVR'
-    version = '0.9.5'
+    version = '0.9.6'
     gameRoot = $game
     installedUtc = [DateTime]::UtcNow.ToString('o')
     outputDirectory = $output

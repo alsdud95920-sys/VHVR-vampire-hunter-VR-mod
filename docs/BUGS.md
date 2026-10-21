@@ -1314,7 +1314,7 @@ Verified: extras 플러그인·설정 도구 자체는 별도로 검증(60/60 �
 - Verified (오프라인): Stage0 경고 0/오류 0, DLL 430,592 B / SHA `34AA247600E3DEA20895F77A49A005B296B950CCFE43EA1483619ECB765DE525`, `tests\HandAim` **203/203**(신규 13: `d202-anchor-frame-controller-direction-is-90-degrees-off-the-view` = 90.0°, `d202-head-frame-controller-direction-is-the-view` = 0°, `d202-head-frame-takeover-keeps-the-authored-rotation`, `source-rest-capture-uses-the-same-frame-as-the-drive` 등), GameplayCamera 38/38, WeaponRuntime 67/67, VhvrExtras 72/72, FlameEndpoint 138/138, ShotScopes 28/28.
 - Not verified (헤드셋): 손이 실제로 컨트롤러를 따라오는지는 착석 1회가 필요하다(`docs\playtests\PLAYTEST-D202-HAND-FRAME-KO.md`). 왼손 슬롯은 이번 실행의 Playground 씬에서 `weaponsInSlot=0`이라 확인 불가.
 
-## BUG-203 — 스냅 턴이 D-195 이후 시야를 돌리지 못한다 (FIXED IN SOURCE / D-211, 헤드셋 재검증 대기, 2026-10-20)
+## BUG-203 — 스냅 턴이 D-195 이후 시야를 돌리지 못한다 (FIXED / 헤드셋 확인 완료, D-211, 2026-10-22 CLOSED)
 
 - Expected: 오른쪽 스틱 좌/우(≥0.7, `SnapTurnDegrees=30`)로 요청하면 시야가 30° 돈다.
 - Actual: legacy 경로는 `anchorRotation`만 돌리는데(`OpenXrHost.ApplySnap` → `HandAimMath.SnapAnchor`) 눈 합성이 그 값을 쓰지 않는다(D-195). 회전 없이 **앵커 위치 항 때문에 화면이 옆으로 살짝 튀기만** 한다.
@@ -1330,6 +1330,7 @@ Verified: extras 플러그인·설정 도구 자체는 별도로 검증(60/60 �
 - Verified (오프라인, 2026-10-20): 플러그인 빌드 경고 0/오류 0, `tests\HandAim` **238/238**(신규 7: 3택·미등록값 해석·끄기·랩·누적, 소스 배선 3), `tests\Settings` **13/13**(신규: 0/45 왕복·다른 키 보존·문자열 숫자 읽기·3택 계약), `VhvrSettings --selftest` PASS(`snap=30`), `--form-selftest` PASS(controls=33, clipped=0, 미리보기 "Snap turn 45 deg per right-stick push").
 - Not verified (헤드셋): 한 번 밀면 그 각도만큼 돌고 위치가 튀지 않는지, 전방 이동이 새 방향으로 함께 도는지는 착석 1회가 필요하다(판정 3종: `docs\CONTROLS.md` §6).
 - 배포 (2026-10-21, 사용자 요청 "설치된 게임에 해당 업데이트를 저장하고 내가 검증하겠다"): 로컬 설치본 `F:\SteamLibrary\steamapps\common\Vampire Hunters`에 새 플러그인(`12936192…E85F2F`, 440,320 B)과 `VhvrSettings.exe` 3택 UI를 덮어썼다. 백업 `F:\VRMods\backup\20261021T003925-d211-deploy`, 배포 스크립트 `scripts\deploy-dev.ps1`, 설치본에 `VampireHuntersVR-0.9.5-rc1\UPDATE-D211-KO.txt`(검증/롤백 안내)를 남겼다. 라이브 설정은 `SnapTurnDegrees=30`, `HandPoseFrame=Head`로 손대지 않았다(해시 동일). 배포 후 설치본 DLL에서 `SNAP_TURN`/`SNAP applied in the head frame (D-211)`/`ResetSnapView`/`ViewYawRotation` 심볼을 확인했고, 설치본 `VhvrSettings.exe --form-selftest`가 라이브 설정을 읽어 `Snap turn 30 deg per right-stick push`를 표시했다.
+- **Verified (헤드셋, 2026-10-22, 사용자 보고)**: "스냅턴 잘 작동하네, 시야가 30도 돌았고 몸 제자리, 손, 무기 레티클 다 같이 잘 돌았어" — A1(시야 30° 회전)·A2(위치 고정)·B2(손/무기/리티클 동반 회전) 통과. 45°/끄기는 같은 코드 경로의 다른 값이라 별도 착석은 하지 않았다. → **BUG-203 CLOSED**. 0.9.6 패키지에 포함해 공개했다(README/릴리스 노트).
 
 
 ## BUG-204 — 엔지니어 터렛 건설: 건설 UI는 열리는데 왼손 X로 설치가 안 됨 (OPEN, 원인 확정 / 수정 미착수, 2026-10-18)

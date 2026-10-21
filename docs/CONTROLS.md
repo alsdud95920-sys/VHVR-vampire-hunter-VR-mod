@@ -1,6 +1,6 @@
 # 컨트롤러 키 설정 (현재 설치본 기준) / Controller Key Map (as installed)
 
-기준 설치본: Stage0 **0.9.4** (`BepInEx\plugins\VampireHuntersVR.Stage0.dll`, SHA256 `102E765D…`) +
+기준 설치본: Stage0 **0.9.6** (`BepInEx\plugins\VampireHuntersVR.Stage0.dll`, SHA256 `129361927619F42C3A625D99EB85EB04B781DF981690C104D17FB4F35BE85F2F`) +
 extras **0.9.5 후보** (`BepInEx\plugins\VhvrExtras.dll`, SHA256 `52E6707290D430F25615CF50EFAA7ADA3013DD21527FB7861D999BFDDB1CA533`).
 
 - 이 표는 **설계가 아니라 런타임 코드 그대로**입니다. 근거: `src\interaction\HandInput.cs`(D-091/D-093/D-099/D-101/D-114/D-184),
@@ -143,14 +143,13 @@ The mod synthesizes no OS keyboard/mouse input; it drives the game's own input A
   Every row exists in the installed code and passed the offline suites.
 - 단 **행별 헤드셋 승인 기록은 없습니다.** 양 스틱 클릭 리센터·헤드 프레임 레이저는 `docs\playtests\PLAYTEST-D201-MENU-CENTER-KO.md`,
   **손/무기 방향·리티클·무기 기울기와 스냅 턴은** `docs\playtests\PLAYTEST-D202-HAND-FRAME-KO.md`의 착석 1회로 확인해야 합니다.
-  **D-211 스냅 턴(30/45/끄기)** 은 특히 판정 항목이 3개입니다: ① 한 번 밀면 그 각도만큼 돌고 위치가 튀지 않는다 ② 앞으로 밀면 새 방향으로 이동한다
-  (`moveYawDelta`가 함께 돈다) ③ `run\host.json`의 `snapViewYaw`/`snapTurnsApplied`가 실제로 증가한다.
+- **D-211 스냅 턴(30/45/끄기)**: 30°는 **헤드셋에서 확인됐습니다**(2026-10-22 사용자 보고 — 시야가 30° 돌고 몸은 제자리, 손·무기·리티클이 함께 회전). 45°와 끄기는 같은 코드 경로의 다른 값이지만 직접 착용 확인은 아직 없습니다. 영수증으로는 `run\host.json`의 `snapViewYaw`/`snapTurnsApplied`가 실제로 증가하는지 확인합니다.
 - **D-202 변경점 (효력 있음)**: 게임플레이 손/조준 합성 프레임이 게임 카메라(플레이어 yaw) → **눈과 같은 헤드 프레임**으로 바뀌었습니다.
-  D-202 이전 빌드에서는 무기와 리티클이 컨트롤러가 가리키는 방향에서 90° 벗어나 보였습니다(BUG-202). 스냅 턴은 D-211에서 시야 회전으로 구현했고(30/45/끄기), 아직 헤드셋 미검증입니다.
+  D-202 이전 빌드에서는 무기와 리티클이 컨트롤러가 가리키는 방향에서 90° 벗어나 보였습니다(BUG-202). 스냅 턴은 D-211에서 시야 회전으로 구현했고(30/45/끄기), 30°는 헤드셋 확인 완료입니다.
   There is **no per-row headset acceptance record** — the recenter chord and head-frame laser need the D-201 script, the hand/weapon
-  direction, reticle and weapon roll need the D-202 script; the D-211 snap turn (30 deg / 45 deg / off) needs its own
-  three-point check — one push turns exactly that much with no position jolt, forward movement follows the new heading,
-  and `snapViewYaw` / `snapTurnsApplied` in `run\host.json` actually advance. D-202 moved the gameplay hand/aim composition into the
+  direction, reticle and weapon roll need the D-202 script; the D-211 snap turn was accepted in the headset at 30 deg on 2026-10-22
+  (view turns one step, position stays put, hands/weapon/reticle turn with it). 45 deg and off reuse the same path and are untested
+  on hardware; `snapViewYaw` / `snapTurnsApplied` in `run\host.json` are the receipt fields. D-202 moved the gameplay hand/aim composition into the
   head frame (pre-D-202 builds showed the weapon and reticle 90° off the controller, BUG-202).
 - 바인딩을 바꾸려면 소스 상수(`HandAim.cs`)를 고치고 `tests\HandAim`·`tests\VhvrExtras`를 다시 돌려야 합니다.
   런타임 재바인딩은 **미구현**(`config\bindings.json`의 `rebinding.status = NOT_IMPLEMENTED`).
