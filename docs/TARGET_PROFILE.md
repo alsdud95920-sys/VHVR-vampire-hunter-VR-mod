@@ -2,7 +2,7 @@
 Date: 2026-10-06 | Mode: agentic
 
 ## 0.9.6 public package (built + published, 2026-10-22)
-- `dist\VampireHuntersVR-0.9.6.zip` — 35,666,579 B, SHA256 `325DAEC60F9B19B7DDAFF8789A0075EEA7411D4FB575A2CB050329EC6B1F6FB1`; sidecar `VampireHuntersVR-0.9.6.sha256.txt`.
+- `dist\VampireHuntersVR-0.9.6.zip` — 35,666,676 B, SHA256 `25FC057BB9B20FB7C1E23AF8E80C59ED9B39733A997DC5896E38E680EA8344E7`; sidecar `VampireHuntersVR-0.9.6.sha256.txt`.
 - Assembled from the published 0.9.5 ZIP by `scripts\pack-release.ps1` (0.9.5 payload kept byte-identical): Stage0 440,320 B (`129361927619F42C3A625D99EB85EB04B781DF981690C104D17FB4F35BE85F2F`, = the headset-tested D-211 DLL), NativeHost 339,456 B (`E6C9BFD41E1E536087C945563F4751FC3EF2C8A7426F6F1D5438B32A9B3DC516`, unchanged), Extras 54,272 B (`B4AD024D6908D52C76FA8F054A34D40E4C0ED9780C045731EA8B3F044F2FA3C1`, unchanged). Installer defaults: `HandPoseFrame=Head`, `TurretCycle=Stick`, `SnapTurnDegrees=30`; manifest version `0.9.6`.
 - Verified: 254 entries under a single `VampireHuntersVR-0.9.6/` root with forward-slash entry names; install → 237 files → uninstall round trip in a throw-away game folder (stock exe untouched, no leftovers); Stage0 hash inside the ZIP = installed hash.
 - Headset: snap turn at 30° confirmed (D-211 / BUG-203 closed). 45°/off and D-202/D-206/D-207 behavior still not worn separately.

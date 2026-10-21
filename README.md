@@ -15,6 +15,7 @@ Download: <https://github.com/alsdud95920-sys/VHVR-vampire-hunter-VR-mod/release
    ```
 
 2. **Close the game.** Extract the zip **into the game folder** — the folder that contains `Vampire Hunters.exe`.
+   Upgrading from an older release: run `uninstall.bat` in the old folder **first**. The installer refuses to merge with an existing `BepInEx` folder, and it recreates `vhvr-openxr-host.json` with the defaults.
 3. Run `install.bat` from the extracted `VampireHuntersVR-0.9.6` folder. If you get a permission error, run it as administrator. The installer only writes its own files and leaves the retail game files alone.
 4. Run `VhvrSettings.exe` (same folder) to pick your values, then press **Apply**:
    - **Screen size** (per-eye render resolution): Low 0.8 / Normal 1.0 (default) / High 1.2 / Custom 0.5–2.0
