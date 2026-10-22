@@ -358,6 +358,43 @@ internal static class SnapTurnPolicy
     }
 }
 
+// D-213: continuous right-stick view turn alongside D-211's snap turn (Off / 30 deg / 45 deg / Smooth).
+// Same sign convention as SnapTurnPolicy (positive stick X = turn right = positive yaw), feeding the same
+// session view-yaw offset so eyes, hands, weapons, reticle, fire path and head-relative movement turn together.
+internal static class SmoothTurnPolicy
+{
+    public const float EnterAt = 0.25f;
+    public const float LeaveAt = 0.15f;
+    public const float DefaultDegreesPerSecond = 120f;
+    public const float MinDegreesPerSecond = 30f;
+    public const float MaxDegreesPerSecond = 240f;
+    public const float MaxDeltaSeconds = 0.1f;
+    public const float MaxDegreesPerFrame = 6f;
+
+    public static float ClampDegreesPerSecond(float value) =>
+        float.IsFinite(value) ? MathF.Min(MaxDegreesPerSecond, MathF.Max(MinDegreesPerSecond, value)) : DefaultDegreesPerSecond;
+
+    public static float Next(bool engaged, float stickX, float degreesPerSecond, float deltaSeconds, out bool engagedAfter)
+    {
+        engagedAfter = engaged;
+        if (float.IsNaN(stickX) || float.IsInfinity(stickX) || !float.IsFinite(deltaSeconds) || !(deltaSeconds > 0f)) return 0f;
+        float a = MathF.Abs(stickX);
+        if (engaged)
+        {
+            if (a <= LeaveAt) { engagedAfter = false; return 0f; }
+        }
+        else
+        {
+            if (a < EnterAt) return 0f;
+            engagedAfter = true;
+        }
+        float ramp = MathF.Min(1f, MathF.Max(0f, (a - LeaveAt) / (1f - LeaveAt)));
+        float degrees = ClampDegreesPerSecond(degreesPerSecond) * ramp * MathF.Min(MaxDeltaSeconds, deltaSeconds);
+        if (degrees > MaxDegreesPerFrame) degrees = MaxDegreesPerFrame;
+        return stickX > 0f ? degrees : -degrees;
+    }
+}
+
 // D-206 (BUG-204): the engineer's turret build mode as a pure state machine, so it can be tested without a headset.
 // The game's own text names both actions (artifacts\_d204-loc-turret.txt, skill_desc_engineer_1): "Press
 // {action=Special Ability} to enter build mode or switch blueprints. Press {action=Fire} to build the turret.", and

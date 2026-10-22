@@ -85,3 +85,7 @@ Newest first. Status: [ ] 미착수 / [~] 진행 / [x] 완료. 상세 근거는 
   - 다음: 방법론 논의 → 결정 후 착수.
 
 - [ ] **TOOL-090 수정**: `tests\headset-extras.ps1`의 판정 라벨을 실제 Hook 라벨로 교체(자동 판정표 신뢰 회복).
+- [ ] **D-213 스무스 턴(Smooth) — 헤드셋 착석 확인** *(0.9.6 베이스 재구현 완료, 오프라인 PASS)*
+  - 기존 0.9.7 폐기 후 0.9.6(`533c1c2`) 위에서 깔끔하게 재구현: `Turn (right stick)`은 `_turnPanel`로 분리된 단일 라디오 그룹 **Off / 30 deg (default) / 45 deg / Smooth** 4택(`Picture size` 라디오 그룹과 간섭 0, 불필요한 각도 입력창 제거).
+  - 런타임: `TurnMode=Smooth`일 때 오른쪽 스틱 유지 중 연속 회전(`SmoothTurnPolicy`, 기본 120°/s, 일시정지 시 정지), `Snap`일 때 기존 0/30/45 스냅 턴 그대로.
+  - 게임 폴더(`F:\SteamLibrary\steamapps\common\Vampire Hunters`)에 최신 `VampireHuntersVR.Stage0.dll` 및 `VhvrSettings.exe`/`VhvrSettings.dll` 배포 완료.

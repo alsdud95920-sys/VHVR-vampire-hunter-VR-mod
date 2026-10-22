@@ -36,16 +36,18 @@
 - on 으로 켜면 비스듬한 벽/바닥의 텍스처(멀리 있는 표면)가 선명해집니다. GPU 텍스처 유닛 단계 비용(거의 없음). **fps 비용은 아직 측정하지 않았습니다**(첫 PLAYTEST-D104 에서 측정 예정).
 - 0.7 의 호스트(`OpenXrHost.cs:879`)는 이미 이 키를 받습니다 — 0.7.1 은 **사용자 도구(VhvrSettings.exe UI/CLI)** 로 노출하는 것이 전부입니다. 호스트 코드는 변경되지 않았습니다.
 
-## 고르는 값 5 — 스냅 턴 (right stick, D-211)
-- **Off / 30 deg (기본) / 45 deg** 세 가지뿐입니다. 키는 `SnapTurnDegrees`(숫자 0 / 30 / 45).
-- **Off**면 오른쪽 스틱 좌/우가 아무 일도 하지 않습니다. **30/45**면 한 번 밀 때 그 각도만큼 시야가 돌고, 스틱을 놓았다가 다시 밀어야 다음 칸입니다.
+## 고르는 값 5 — 시점 회전 (Turn (right stick), D-211 / D-213)
+- **Off / 30 deg (default) / 45 deg / Smooth** 네 가지 중 하나를 고릅니다.
+- **Off**: 오른쪽 스틱 좌/우가 시야를 돌리지 않습니다(`TurnMode=Snap`, `SnapTurnDegrees=0`).
+- **30 deg / 45 deg (스냅 턴)**: 한 번 밀 때 30° 또는 45°만큼 시야가 끊어져 돌고, 스틱을 중앙으로 놓았다가 다시 밀어야 다음 칸이 돕니다(`TurnMode=Snap`, `SnapTurnDegrees=30` 또는 `45`).
+- **Smooth (스무스 턴)**: 오른쪽 스틱을 좌/우로 기울이고 있는 동안 시야가 끊기지 않고 부드럽게 연속 회전합니다(`TurnMode=Smooth`, 기본 속도 120°/s). 일시정지 중에는 멈춥니다.
 - 회전은 **제자리**에서 일어납니다(플레이어 위치 불변). 앞으로 밀면 새 방향으로 이동합니다.
-- 목록에 없는 값을(예: 60, 문자 `"45"`) 파일에 직접 넣으면 프로그램은 shipped 값 **30**으로 표시하고, 호스트도 30으로 동작하며 로그에 경고 1줄을 남깁니다. 저장하면 0/30/45 중 하나만 씁니다.
+- 목록에 없는 값을 파일에 직접 넣으면 프로그램은 기본값(**30 deg Snap**)으로 표시하고, 호스트도 기본값으로 동작하며 로그에 경고 1줄을 남깁니다.
 - VR 안에서 조작하기 전에 **양 스틱 클릭으로 리센터**를 먼저 하세요(메뉴 패널이 정면에 옵니다).
 
 ## 저장 동작
 - `Apply`를 누르면 **저장 전에** `vhvr-openxr-host.json.<시각>.bak` 백업을 만듭니다.
-- 이 프로그램은 **`EyePreset`/`EyeWidth`/`EyeHeight`/`EyeScale` + `uiScale` + `EyeMsaa` + `Anisotropic` + `FovScaleX`/`FovScaleY` + `SnapTurnDegrees`** 만 바꾸고 나머지는 그대로 둡니다. In-VR UI size를 건드리지 않으면 `uiScale`도 안 건드립니다.
+- 이 프로그램은 **`EyePreset`/`EyeWidth`/`EyeHeight`/`EyeScale` + `uiScale` + `EyeMsaa` + `Anisotropic` + `FovScaleX`/`FovScaleY` + `SnapTurnDegrees` + `TurnMode` + `SmoothTurnDegreesPerSecond`** 만 바꾸고 나머지는 그대로 둡니다. In-VR UI size를 건드리지 않으면 `uiScale`도 안 건드립니다.
 - 범위를 벗어난 값(눈당 512–4096 밖, 배율 0.5–2.0 밖, UI 0.5–3.0 밖, MSAA 1·2·4·8 밖)은 **거부**합니다(조용히 바뀌지 않음).
 - 옛 설정(눈당 2064x2208)을 쓰던 파일이면 "Use 1920x1080 base" 버튼으로 새 기준(양안 3840x2160)으로 옮길 수 있습니다.
 

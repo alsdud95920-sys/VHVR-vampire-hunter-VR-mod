@@ -99,6 +99,11 @@ public sealed class OpenXrHostConfig
 
 	public float SnapTurnDegrees { get; set; } = 30f;
 
+	// D-213: "Snap" (default: uses SnapTurnDegrees 0/30/45) or "Smooth" (continuous rotation while the right stick is held).
+	public string TurnMode { get; set; } = "Snap";
+
+	public float SmoothTurnDegreesPerSecond { get; set; } = 120f;
+
 	public bool HandHaptic { get; set; } = true;
 
 	public float HapticAmplitude { get; set; } = 0.4f;

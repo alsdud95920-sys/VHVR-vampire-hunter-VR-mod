@@ -1,4 +1,4 @@
-namespace VampireHuntersVR.Settings;
+﻿namespace VampireHuntersVR.Settings;
 
 using System.Globalization;
 using System.Text.Json;
@@ -298,6 +298,48 @@ public static class HostConfigTool
         string? error = ValidateSnapTurnDegrees(value);
         if (error != null) throw new ArgumentException(error);
         root["SnapTurnDegrees"] = value;
+    }
+
+    // D-213: TurnMode selects between Snap (0=off, 30, 45) and Smooth (continuous rotation while right stick is held).
+    public const string DefaultTurnMode = "Snap";
+    public static readonly string[] TurnModeChoices = { "Snap", "Smooth" };
+
+    public static string? ReadTurnMode(JsonObject root) => StringOf(root, "TurnMode");
+
+    public static string? ValidateTurnMode(string? value) =>
+        value != null && Array.IndexOf(TurnModeChoices, value) >= 0 ? null : "invalid turn mode: use Snap or Smooth";
+
+    public static void ApplyTurnMode(JsonObject root, string value)
+    {
+        string? error = ValidateTurnMode(value);
+        if (error != null) throw new ArgumentException(error);
+        root["TurnMode"] = value;
+    }
+
+    public const float DefaultSmoothTurnDegreesPerSecond = 120f;
+    public const float MinSmoothTurnDegreesPerSecond = 30f;
+    public const float MaxSmoothTurnDegreesPerSecond = 240f;
+
+    public static float? ReadSmoothTurnDegreesPerSecond(JsonObject root)
+    {
+        if (root["SmoothTurnDegreesPerSecond"] is not JsonValue value) return null;
+        if (value.TryGetValue(out float single)) return single;
+        if (value.TryGetValue(out double number)) return (float)number;
+        if (value.TryGetValue(out long whole)) return whole;
+        if (value.TryGetValue(out string? text) && float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float parsed)) return parsed;
+        return null;
+    }
+
+    public static string? ValidateSmoothTurnDegreesPerSecond(float value) =>
+        !float.IsFinite(value) || value < MinSmoothTurnDegreesPerSecond || value > MaxSmoothTurnDegreesPerSecond
+            ? "invalid smooth turn speed: use 30-240 degrees per second"
+            : null;
+
+    public static void ApplySmoothTurnDegreesPerSecond(JsonObject root, float value)
+    {
+        string? error = ValidateSmoothTurnDegreesPerSecond(value);
+        if (error != null) throw new ArgumentException(error);
+        root["SmoothTurnDegreesPerSecond"] = value;
     }
 
     public static string Save(string path, JsonObject root, DateTime? stamp = null)

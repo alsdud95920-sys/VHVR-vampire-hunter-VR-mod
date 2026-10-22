@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace VampireHuntersVR.Interaction;
 
@@ -20,22 +20,51 @@ internal sealed partial class HandAimDriver
 {
     private const float SnapPress = SnapTurnPolicy.PressAt, SnapRelease = SnapTurnPolicy.ReleaseAt;
     private bool snapArmed = true;
-    private float pendingSnap;
+    private float pendingTurn;
+    private int pendingSnapSteps;
     public float SnapDegrees;
     public int SnapTurns;
     public float SnapTotal;
+    // D-213: resolved by the host from TurnMode / SmoothTurnDegreesPerSecond before the first tick.
+    public string TurnMode = "Snap";
+    public float SmoothDegreesPerSecond = SmoothTurnPolicy.DefaultDegreesPerSecond;
+    private bool smoothEngaged;
+    public int SmoothFrames;
+    public float ViewTurnedDegrees;
 
-    // One turn per stick push (SnapTurnPolicy): re-arms only after the stick returns near center.
-    private void SnapTick(NativeHandsStatus status, bool available)
+    // D-213: one control, two modes. Snap = one step per push (SnapTurnPolicy, 0=off/30/45). Smooth = continuous
+    // rotation while the right stick is held (SmoothTurnPolicy). Both modes feed pendingTurn so the host rotates
+    // the same view-yaw offset.
+    private void TurnTick(NativeHandsStatus status, bool available, float deltaSeconds)
     {
-        if (!InputEnabled || SnapDegrees <= 0f) return;
+        if (!InputEnabled) return;
+        bool smooth = TurnMode == "Smooth";
+        if (!smooth && SnapDegrees <= 0f) return;
+        if (smooth && Time.timeScale <= 0.01f) { smoothEngaged = false; return; }
         float x = available ? status.Right.StickX : 0f;
-        float d = SnapTurnPolicy.Next(snapArmed, x, SnapDegrees, out snapArmed);
-        if (d != 0f) { pendingSnap += d; SnapTurns++; SnapTotal += d; }
+        if (smooth)
+        {
+            float d = SmoothTurnPolicy.Next(smoothEngaged, x, SmoothDegreesPerSecond, deltaSeconds, out smoothEngaged);
+            if (d == 0f) return;
+            pendingTurn += d;
+            SmoothFrames++;
+            ViewTurnedDegrees += d;
+            return;
+        }
+        float step = SnapTurnPolicy.Next(snapArmed, x, SnapDegrees, out snapArmed);
+        if (step != 0f) { pendingTurn += step; pendingSnapSteps++; SnapTurns++; SnapTotal += step; ViewTurnedDegrees += step; }
     }
 
-    // Consumed by the host, which owns the anchor rotation.
-    public float TakeSnap() { float d = pendingSnap; pendingSnap = 0f; return d; }
+    // Consumed by the host, which owns the view-yaw offset (or legacy anchor rotation).
+    public float TakeTurn(out int snapSteps)
+    {
+        float d = pendingTurn;
+        snapSteps = pendingSnapSteps;
+        pendingTurn = 0f;
+        pendingSnapSteps = 0;
+        return d;
+    }
+    public float TakeSnap() => TakeTurn(out _);
 
     private const float MoveDeadzone = 0.18f;
     // GamepadButton bit indices. D-100, from the game's own action asset: Special Ability=East, Bloody Rush=North, Interact(+Run)=leftStickPress, Reload=West,

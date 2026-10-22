@@ -1,4 +1,4 @@
-using VampireHuntersVR.Stage0;
+﻿using VampireHuntersVR.Stage0;
 using VampireHuntersVR.Render;
 using VampireHuntersVR.Settings;
 using System.Text.Json.Nodes;
@@ -301,6 +301,23 @@ string marker = path + ".safe-mode";
         Assert(HostConfigTool.SnapTurnChoices.Length == 3 && HostConfigTool.SnapTurnChoices[0] == 0f &&
             HostConfigTool.SnapTurnChoices[1] == 30f && HostConfigTool.SnapTurnChoices[2] == 45f);
         Assert(HostConfigTool.DefaultSnapTurnDegrees == 30f);
+    });
+    Check("D-213 turn mode reads, validates and writes Snap/Smooth cleanly", () => {
+        File.WriteAllText(hostPath, "{\"Enabled\":true,\"HandAim\":true,\"SnapTurnDegrees\":45}");
+        JsonObject root = HostConfigTool.Load(hostPath);
+        Assert(HostConfigTool.ReadTurnMode(root) == null);
+        Assert(HostConfigTool.ValidateTurnMode("Snap") == null && HostConfigTool.ValidateTurnMode("Smooth") == null);
+        Assert(HostConfigTool.ValidateTurnMode("snap") != null && HostConfigTool.ValidateTurnMode("") != null && HostConfigTool.ValidateTurnMode(null) != null);
+        HostConfigTool.ApplyTurnMode(root, "Smooth");
+        HostConfigTool.ApplySmoothTurnDegreesPerSecond(root, 120f);
+        HostConfigTool.Save(hostPath, root, new DateTime(2026, 10, 22, 0, 0, 0, DateTimeKind.Utc));
+        JsonObject written = HostConfigTool.Load(hostPath);
+        Assert(HostConfigTool.ReadTurnMode(written) == "Smooth");
+        Assert(HostConfigTool.ReadSmoothTurnDegreesPerSecond(written) == 120f);
+        Assert(HostConfigTool.ReadSnapTurnDegrees(written) == 45f);
+        string formSrc = File.ReadAllText(Path.Combine(testsRoot!.Parent!.FullName, "src", "settings", "SettingsForm.cs"));
+        Assert(formSrc.Contains("_turnPanel.Controls.AddRange(new Control[] { _snapOff, _snap30, _snap45, _smooth });"));
+        Console.WriteLine("PASS d213-turn-mode-round-trip-and-isolated-radio-group");
     });
     Console.WriteLine($"RESULT {passed} passed, 0 failed; pure config/marker/resolution/MSAA fixtures; no BepInEx/game/Unity execution.");
     return 0;

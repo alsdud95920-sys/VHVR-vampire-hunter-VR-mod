@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Text.Json;
 using UnityEngine;
 
@@ -129,7 +129,7 @@ internal sealed partial class HandAimDriver
         MarkersTick(source); // D-181: restored - dropped by the D-178 source recovery, so potion/chest arrows vanished
         HapticTick(available);
         InputTick(status, available, source, player);
-        SnapTick(status, available);
+        TurnTick(status, available, Time.deltaTime);
         if (fireEnabled && player != null) FireTick(player, source);
         ObserveHandApplied(); // D-178 recovery: this diagnostics call was dropped with the recovered source (the RenderTiming
                               // fixture "applied-only-after-fire-tick" pins it). Timing probe only; no gameplay effect.
@@ -379,7 +379,7 @@ internal sealed partial class HandAimDriver
                 note = "Read-only flame/ParticleSystem sampling for TOOL-070: no fire or effect entry point is called and no field, transform or ParticleSystem is written." },
             poseTrace = new { left = leftPose.Receipt(), right = rightPose.Receipt(),
                 note = "Read-only rotation trace for TOOL-071 (left-weapon spin). It reads transform rotation/position/name and the last written container rotation only; no transform, object, field, ParticleSystem or weapon/effect entry point is written." },
-            input = new { enabled = InputEnabled, moveCalls = MoveCalls, menuPresses = MenuPresses, jumpPresses = JumpPresses, menuBlockedByLevelUp = MenuBlockedByLevelUp, interactPresses = InteractPresses, reloadPresses = ReloadPresses, facePresses = FacePresses, minFacePressHeadDistance = FiniteOrNull(MinFacePressHeadDistance), lastFacePressHeadDistance = FiniteOrNull(LastFacePressHeadDistance), specialPresses = SpecialPresses, bloodPresses = BloodPresses, armLPresses = ArmLPresses, armRPresses = ArmRPresses, pad = pad != null, padSent = PadSent, padError = PadError, padNote = PadNote, scheme = InputScheme(), moveYawDelta = LastMoveYawDelta, error = InputError, snapDegrees = SnapDegrees, snapTurns = SnapTurns, snapTotalDegrees = SnapTotal,
+            input = new { enabled = InputEnabled, moveCalls = MoveCalls, menuPresses = MenuPresses, jumpPresses = JumpPresses, menuBlockedByLevelUp = MenuBlockedByLevelUp, interactPresses = InteractPresses, reloadPresses = ReloadPresses, facePresses = FacePresses, minFacePressHeadDistance = FiniteOrNull(MinFacePressHeadDistance), lastFacePressHeadDistance = FiniteOrNull(LastFacePressHeadDistance), specialPresses = SpecialPresses, bloodPresses = BloodPresses, armLPresses = ArmLPresses, armRPresses = ArmRPresses, pad = pad != null, padSent = PadSent, padError = PadError, padNote = PadNote, scheme = InputScheme(), moveYawDelta = LastMoveYawDelta, error = InputError, snapDegrees = SnapDegrees, snapTurns = SnapTurns, snapTotalDegrees = SnapTotal, turnMode = TurnMode, smoothFrames = SmoothFrames, viewTurnedDegrees = ViewTurnedDegrees,
                 turret = new { cycle = TurretCycle, modeFrames = TurretModeFrames, stepsBack = TurretStepsBack, stepsForward = TurretStepsForward, confirms = TurretConfirms, confirmHeld = turretConfirmWas, error = TurretModeError,
                     note = "D-206 (BUG-204): the engineer's build-mode grips. modeFrames counts frames the game itself reported is_turret_mode; a step is one grip released outside a chord; both grips (chord) hold the game's Fire action. Acceptance is a headset observation (docs\\playtests\\PLAYTEST-D204-TURRET-KO.md)." } },
             receiptError,

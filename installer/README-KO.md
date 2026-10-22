@@ -46,19 +46,20 @@ Vampire Hunters(Steam, 빌드 22267731)를 VR 헤드셋에서 양손 6DoF으로 
    | Custom 0.5~2.0 | 배율 x 1920x1080 | 배율 x 3840x2160 |
 2. **In-VR UI size** — `uiScale` (0.50–3.00, 기본 1.50)
 3. **Eye MSAA** — `EyeMsaa` (1 = off, 2 / 4 / 8 = 그만큼 샘플, 기본 4)
-4. **Snap turn (right stick)** — `SnapTurnDegrees` (0 = 끄기 / 30 = 기본 / 45 = 넓게). 아래 절 참고.
+4. **Turn (right stick)** — **Off** (끄기) / **30 deg (default)** (스냅 30°) / **45 deg** (스냅 45°) / **Smooth** (스무스 턴, 연속 회전). 아래 절 참고.
 5. **렌더 FOV 배율 X / Y** — `FovScaleX`(가로) / `FovScaleY`(세로), 0.50–1.00 (기본 0.85 / 1.00). 게임 자체 FOV 옵션과는 별개이며, **렌더 해상도를 바꾸지 않는 확대/축소 설정**입니다. `1.00` = 런타임이 준 화각 그대로, 낮출수록 그려지는 화각이 좁아져 **화면 전체가 확대**됩니다.
 
 화면 크기·MSAA 값이 클수록 선명하지만 프레임이 떨어지고, MSAA는 더 많은 샘플 = 매끄러운 가장자리 + GPU 비용. 설정 파일: `<게임>\BepInEx\config\vhvr-openxr-host.json`. 도구는 저장 전에 `.bak` 백업을 만듭니다. 자세한 내용은 `SETTINGS-README-KO.md`.
 
 > **UI가 작아서 잘 안 보이면 인게임 옵션의 FOV를 최저로 내리는 것을 권장합니다.** 게임 설정 메뉴의 FOV(시야각)를 최저로 두면 화면 전체가 확대되어 메뉴·HUD·레벨업/상자 카드가 한눈에 커집니다. 이는 **`VhvrSettings.exe`의 렌더 FOV 배율과 다른 항목**이고 렌더 해상도를 바꾸지 않으므로 **게임 성능(프레임)에는 영향이 없습니다**. 넓은 시야가 좋으면 게임 기본값을 그대로 두면 됩니다.
 
-## 스냅 턴 (D-211) — 0.9.6 포함
-- **오른쪽 스틱 좌/우**를 밀면 시야가 한 번에 **30°**(기본), **45°**, 또는 **꺼짐**으로 돕니다. 한 번 밀 때 한 칸이고, 스틱을 놓았다가 다시 밀어야 다음 칸입니다(진입 ≥0.7 / 재무장 <0.3, 좌우만·위아래와 겹치지 않게 축 우세 규칙).
+## 시점 회전 — 스냅 턴 (D-211) & 스무스 턴 (D-213)
+- `VhvrSettings.exe` → **Turn (right stick)** 에서 **Off / 30 deg (default) / 45 deg / Smooth** 네 가지 중 하나를 선택합니다.
+- **스냅 턴 (30 deg / 45 deg)** 과 **Off**: 오른쪽 스틱 좌/우를 한 번 밀 때 **30°**(기본) 또는 **45°**씩 끊어 돌고, **Off**면 돌지 않습니다.
+- **스무스 턴 (Smooth)**: 오른쪽 스틱 좌/우를 기울이고 있는 동안 시야가 끊기지 않고 부드럽게 연속 회전합니다(기본 120°/s, 일시정지 중 정지).
 - **제자리에서 돕니다.** 시야(두 눈의 위치 오프셋과 회전)만 돌고 플레이어가 서 있는 자리는 그대로입니다. 앞으로 밀면 새 방향으로 이동합니다. 손·무기·리티클도 시야와 같은 방향으로 함께 돕니다.
-- 바꾸는 방법: `VhvrSettings.exe` → **Snap turn (right stick)** 에서 Off / 30 deg / 45 deg 선택. 또는 게임을 끄고 `BepInEx\config\vhvr-openxr-host.json`의 `"SnapTurnDegrees"`를 `0` / `30` / `45` 로 수정. 목록에 없는 값(예: 60)은 **30으로 동작하고 로그에 경고 1줄**을 남깁니다(조용히 바뀌지 않음).
-- 영수증: `%LOCALAPPDATA%\VampireHuntersVR\run\host.json`의 `snapTurnDegrees` / `snapViewYaw` / `snapTurnsApplied`.
-- **검증 상태 (정직)**: 30°는 헤드셋에서 확인했습니다(시야가 30° 돌고 몸·위치 고정, 손·무기 레티클 동반 회전). 45°와 끄기는 같은 코드 경로의 다른 값이라 별도 착석 없이 동작하지만, 45°/끄기를 직접 착용해 본 것은 아닙니다.
+- 영수증: `%LOCALAPPDATA%\VampireHuntersVR\run\host.json`의 `turnMode` / `snapTurnDegrees` / `smoothTurnDegreesPerSecond` / `snapViewYaw` / `snapTurnsApplied` / `viewTurnedDegrees`.
+- **검증 상태 (정직)**: 스냅 30°는 헤드셋에서 확인했습니다(0.9.6, D-211). Smooth(D-213)는 오프라인 테스트(248/248)와 설정 도구 검증을 통과했으며 **헤드셋 착용 검증 대기 중**입니다.
 
 ## 5가지 개선 (`VhvrExtras.dll`, 2026-10-14) — **아직 헤드셋 미검증**
 설정 파일: `<게임>\BepInEx\config\local.vampirehuntersvr.extras.cfg` (첫 실행 시 자동 생성).

@@ -89,6 +89,15 @@ public sealed class OpenXrHost : MonoBehaviour
 
 	private int snapAppliedTurns;
 
+	// D-213: resolved turn mode ("Snap" or "Smooth") and speed, plus cumulative degrees turned (steps + smooth).
+	private string turnMode = "Snap";
+
+	private float smoothDegreesPerSecond = SmoothTurnPolicy.DefaultDegreesPerSecond;
+
+	private float viewTurnedDegrees;
+
+	private bool handSmoothAppliedLogged;
+
 	private IntPtr callback;
 
 	private int phase;
@@ -671,7 +680,7 @@ public sealed class OpenXrHost : MonoBehaviour
 			// D-136/D-138, restored (BUG-205): hand the managed phase machine's own numbers to the read-only probe.
 			handAim.SetRenderTimingPhase(phase, lastSubmitted, renderUntil);
 			handAim.Tick(source, anchorPosition + (((Component)player).transform.position - playerAnchor), handPoseBase, sourceScene, player, Config.HandFire);
-			ApplySnap(handAim.TakeSnap());
+			ApplySnap(handAim.TakeTurn(out int snapSteps), snapSteps);
 		}
 		catch (Exception ex)
 		{
@@ -693,7 +702,7 @@ public sealed class OpenXrHost : MonoBehaviour
 	// verified no-snap picture is bit-for-bit the D-202 one (no multiplied identity drifting the eye poses).
 	private Quaternion ViewYawRotation => snapViewYaw == 0f ? Quaternion.identity : Quaternion.AngleAxis(snapViewYaw, Vector3.up);
 
-	private void ApplySnap(float degrees)
+	private void ApplySnap(float degrees, int snapSteps)
 	{
 		//IL_00c3: Unknown result type (might be due to invalid IL or missing references)
 		//IL_00c8: Unknown result type (might be due to invalid IL or missing references)
@@ -705,19 +714,33 @@ public sealed class OpenXrHost : MonoBehaviour
 		// (snapViewYaw) is multiplied into both eye offsets and both eye orientations in PrepareCameras, and the same
 		// rotation is handed to HandAim as its composition base (LateUpdate), so eyes, hands, aim ray, reticle and the
 		// head-relative movement all turn together. The anchor is untouched: the player keeps their place in the world.
+		// D-213: smooth turn writes the same offset, one small delta per frame.
 		// HandPoseFrame=Anchor still runs the legacy anchor path for an A/B sitting.
 		if (degrees != 0f && !handPoseAnchorFrame)
 		{
 			float before = snapViewYaw;
 			snapViewYaw = HandAimMath.AddYaw(snapViewYaw, degrees);
-			snapAppliedTurns++;
-			if (!handSnapAppliedLogged)
+			viewTurnedDegrees += degrees;
+			if (snapSteps > 0)
 			{
-				handSnapAppliedLogged = true;
-				ManualLogSource? snapLogger = Logger;
-				if (snapLogger != null)
+				snapAppliedTurns += snapSteps;
+				if (!handSnapAppliedLogged)
 				{
-					snapLogger.LogInfo((object)("[OPENXR_HOST] SNAP applied in the head frame (D-211): step=" + FormatDegrees(degrees) + " deg, SnapTurnDegrees=" + FormatDegrees(snapStepDegrees) + ", view yaw " + FormatDegrees(before) + " -> " + FormatDegrees(snapViewYaw) + " deg. Pivot = anchorPosition; the player does not move."));
+					handSnapAppliedLogged = true;
+					ManualLogSource? snapLogger = Logger;
+					if (snapLogger != null)
+					{
+						snapLogger.LogInfo((object)("[OPENXR_HOST] SNAP applied in the head frame (D-211): step=" + FormatDegrees(degrees) + " deg, SnapTurnDegrees=" + FormatDegrees(snapStepDegrees) + ", view yaw " + FormatDegrees(before) + " -> " + FormatDegrees(snapViewYaw) + " deg. Pivot = anchorPosition; the player does not move."));
+					}
+				}
+			}
+			else if (!handSmoothAppliedLogged)
+			{
+				handSmoothAppliedLogged = true;
+				ManualLogSource? smoothLogger = Logger;
+				if (smoothLogger != null)
+				{
+					smoothLogger.LogInfo((object)("[OPENXR_HOST] SMOOTH applied in the head frame (D-213): delta=" + FormatDegrees(degrees) + " deg, SmoothTurnDegreesPerSecond=" + FormatDegrees(smoothDegreesPerSecond) + ", view yaw " + FormatDegrees(before) + " -> " + FormatDegrees(snapViewYaw) + " deg. Pivot = anchorPosition; the player does not move."));
 				}
 			}
 			return;
@@ -739,6 +762,34 @@ public sealed class OpenXrHost : MonoBehaviour
 	{
 		snapViewYaw = 0f;
 		snapAppliedTurns = 0;
+		viewTurnedDegrees = 0f;
+	}
+
+	// D-213: resolve TurnMode ("Snap" or "Smooth") and SmoothTurnDegreesPerSecond once per session.
+	private void ResolveTurnMode()
+	{
+		string configured = Config.TurnMode ?? "Snap";
+		bool smooth = configured.Equals("Smooth", StringComparison.Ordinal);
+		bool snap = configured.Equals("Snap", StringComparison.Ordinal);
+		turnMode = (smooth && !handPoseAnchorFrame) ? "Smooth" : "Snap";
+		smoothDegreesPerSecond = SmoothTurnPolicy.ClampDegreesPerSecond(Config.SmoothTurnDegreesPerSecond);
+		ManualLogSource? logger = Logger;
+		if (logger == null) return;
+		if (!smooth && !snap)
+		{
+			logger.LogWarning((object)("[OPENXR_HOST] TurnMode=\"" + configured + "\" is not Snap|Smooth; using Snap."));
+		}
+		else if (smooth && handPoseAnchorFrame)
+		{
+			logger.LogWarning((object)("[OPENXR_HOST] TurnMode=Smooth needs HandPoseFrame=Head (the legacy anchor path cannot turn continuously); using Snap."));
+		}
+		if (smoothDegreesPerSecond != Config.SmoothTurnDegreesPerSecond)
+		{
+			logger.LogWarning((object)("[OPENXR_HOST] SmoothTurnDegreesPerSecond=" + FormatDegrees(Config.SmoothTurnDegreesPerSecond) + " is outside 30-240; using " + FormatDegrees(smoothDegreesPerSecond) + "."));
+		}
+		logger.LogInfo((object)("[OPENXR_HOST] TURN_MODE " + turnMode + (turnMode == "Smooth"
+			? " " + FormatDegrees(smoothDegreesPerSecond) + " deg/s while the right stick is held (head-frame view yaw, D-213)"
+			: " " + FormatDegrees(snapStepDegrees) + " deg per right-stick push (" + (handPoseAnchorFrame ? "legacy anchor path" : "head-frame view yaw, D-211") + "; 0 = off)")));
 	}
 
 
@@ -1061,6 +1112,7 @@ public sealed class OpenXrHost : MonoBehaviour
 			}
 			snapStepLogger.LogInfo((object)("[OPENXR_HOST] SNAP_TURN " + FormatDegrees(snapStepDegrees) + " deg per right-stick push (" + (handPoseAnchorFrame ? "legacy anchor path" : "head-frame view yaw, D-211") + "; 0 = off)"));
 		}
+		ResolveTurnMode();
 		// D-206 (BUG-204): the turret build-mode grip cycle has three candidate game surfaces plus an off switch, and the
 		// sitting A/Bs them, so an unknown value is refused here instead of defaulting to a surface nobody chose.
 		string turretCycle = Config.TurretCycle ?? "";
@@ -1417,6 +1469,8 @@ public sealed class OpenXrHost : MonoBehaviour
 			// and the receipt, so this only hands the same value to HandAim (which stops reading the stick at 0).
 			snapStepDegrees = SnapTurnPolicy.Resolve(Config.SnapTurnDegrees);
 			handAim.SnapDegrees = snapStepDegrees;
+			handAim.TurnMode = turnMode;
+			handAim.SmoothDegreesPerSecond = smoothDegreesPerSecond;
 			handAim.HideHudBackdrop = Config.HideHudBackdrop;
 			handAim.UiVerticalOffset = HudLayoutPolicy.ClampVerticalOffset(Config.UiVerticalOffset);
 			handAim.GameBackdropMode = Config.GameBackdropMode;
@@ -1774,6 +1828,9 @@ public sealed class OpenXrHost : MonoBehaviour
 			snapTurnDegrees = snapStepDegrees,
 			snapViewYaw = snapViewYaw,
 			snapTurnsApplied = snapAppliedTurns,
+			turnMode = turnMode,
+			smoothTurnDegreesPerSecond = smoothDegreesPerSecond,
+			viewTurnedDegrees = viewTurnedDegrees,
 			worldMarkers = Config.WorldMarkers,
 			markerKinds = Config.MarkerKinds,
 			markerMaxDistance = Config.MarkerMaxDistance,
@@ -2661,6 +2718,8 @@ public sealed class OpenXrHost : MonoBehaviour
 		// D-211: same three-choice resolution as the menu path (see Initialize; the warning is logged there once).
 		snapStepDegrees = SnapTurnPolicy.Resolve(Config.SnapTurnDegrees);
 		handAim.SnapDegrees = snapStepDegrees;
+		handAim.TurnMode = turnMode;
+		handAim.SmoothDegreesPerSecond = smoothDegreesPerSecond;
 		handAim.HideHudBackdrop = Config.HideHudBackdrop;
 		handAim.UiVerticalOffset = HudLayoutPolicy.ClampVerticalOffset(Config.UiVerticalOffset);
 		handAim.GameBackdropMode = Config.GameBackdropMode;

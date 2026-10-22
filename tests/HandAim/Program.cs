@@ -909,4 +909,29 @@ Check("d206-config-key-is-validated-in-both-places-and-drilled",
     schema.Contains("\"TurretCycle\"") && installer.Contains("TurretCycle must be Stick, Dpad, Special or Off.") &&
     drill.Contains("TurretCycle = $TurretCycle;"));
 
+// D-213: smooth view turn policy and source guards.
+Check("d213-smooth-speed-clamps-and-defaults",
+    SmoothTurnPolicy.ClampDegreesPerSecond(120f) == 120f &&
+    SmoothTurnPolicy.ClampDegreesPerSecond(10f) == 30f &&
+    SmoothTurnPolicy.ClampDegreesPerSecond(500f) == 240f &&
+    SmoothTurnPolicy.ClampDegreesPerSecond(float.NaN) == 120f);
+Check("d213-smooth-deadzone-and-hysteresis",
+    SmoothTurnPolicy.Next(false, 0.20f, 120f, 0.02f, out bool e0) == 0f && !e0 &&
+    SmoothTurnPolicy.Next(false, 0.50f, 120f, 0.02f, out bool e1) > 0f && e1 &&
+    SmoothTurnPolicy.Next(true, 0.20f, 120f, 0.02f, out bool e2) > 0f && e2 &&
+    SmoothTurnPolicy.Next(true, 0.10f, 120f, 0.02f, out bool e3) == 0f && !e3);
+Check("d213-smooth-continuous-intermediate-angles-and-caps",
+    Near(SmoothTurnPolicy.Next(false, 1.0f, 120f, 1f / 60f, out _), 2f) &&
+    Near(SmoothTurnPolicy.Next(false, -1.0f, 120f, 1f / 60f, out _), -2f) &&
+    SmoothTurnPolicy.Next(false, 1.0f, 240f, 0.5f, out _) == SmoothTurnPolicy.MaxDegreesPerFrame &&
+    SmoothTurnPolicy.Next(false, float.NaN, 120f, 0.02f, out _) == 0f);
+string openXrHostSrc = File.ReadAllText(Path.Combine(root, "src", "core", "OpenXrHost.cs"));
+Check("d213-host-and-driver-wire-smooth-turn",
+    inputSrc.Contains("SmoothTurnPolicy.Next(smoothEngaged, x, SmoothDegreesPerSecond, deltaSeconds, out smoothEngaged)") &&
+    inputSrc.Contains("if (smooth && Time.timeScale <= 0.01f)") &&
+    driver.Contains("TurnTick(status, available, Time.deltaTime);") &&
+    openXrHostSrc.Contains("ApplySnap(handAim.TakeTurn(out int snapSteps), snapSteps);") &&
+    openXrHostSrc.Split("handAim.TurnMode = turnMode;").Length - 1 == 2 &&
+    openXrHostSrc.Contains("viewTurnedDegrees = viewTurnedDegrees,"));
+
 Console.WriteLine($"RESULT {passed} hand aim fixtures passed; math/policy and source guards only, no game/headset/shot-direction gate");

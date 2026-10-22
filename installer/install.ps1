@@ -128,10 +128,10 @@ $config = [ordered]@{
     HandHaptic = $true
     HandShot = $true
     HandShotTracer = $false
-    # D-211 (user request 2026-10-20): right-stick snap turn, exactly three choices - 0 = off, 30 = shipped, 45 =
-    # wider step. One turn per stick push (engage 0.7 / release 0.3). Change it with VhvrSettings.exe ("Snap turn
-    # (right stick)") or edit this value with the game closed; any other number resolves to 30 and is logged.
+    # D-211/D-213: right-stick turn - Off (0), 30 deg (default), 45 deg, or Smooth (TurnMode = 'Smooth').
     SnapTurnDegrees = 30
+    TurnMode = 'Snap'
+    SmoothTurnDegreesPerSecond = 120
     Headset = $true
     HeadsetSeconds = 0
     # D-171: base size is PER EYE, 1920x1080 (= 3840x2160 both eyes). EyePreset low 0.8 / normal 1.0 / high 1.2 / custom (uses EyeScale 0.5-2.0).

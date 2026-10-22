@@ -1,4 +1,4 @@
-namespace VampireHuntersVR.Settings;
+﻿namespace VampireHuntersVR.Settings;
 
 using System.Globalization;
 using System.Text.Json.Nodes;
@@ -97,7 +97,7 @@ internal static class Program
         }
         if (apply && (print || validate)) throw new ArgumentException("--apply cannot be combined with --print/--validate");
         if (selfTest) return SelfTest(scratch ?? Path.Combine(Path.GetTempPath(), "vhvr-settings-selftest"));
-        if (formSelfTest) return FormSelfTest(path ?? HostConfigTool.Locate(AppContext.BaseDirectory) ?? scratch);
+        if (formSelfTest) return FormSelfTest(path ?? (scratch != null && File.Exists(scratch) ? scratch : HostConfigTool.Locate(AppContext.BaseDirectory)));
 
         path ??= HostConfigTool.Locate(AppContext.BaseDirectory);
         if (path == null) { Write("ERROR no " + HostConfigTool.FileName + " found near " + AppContext.BaseDirectory + "; pass --config <path>"); return Usage; }
@@ -231,10 +231,13 @@ internal static class Program
         HostConfigTool.ApplyFovScaleY(loaded, 0.80f);
         HostConfigTool.ApplyFovScaleX(loaded, 1.0f);
         HostConfigTool.ApplyFovScaleY(loaded, 1.0f);
-        // D-211: round-trip the three-choice snap turn 45 -> 30 so the keys check sees the shipped default again
-        // while still proving Apply/Read handle a real choice.
+        // D-211/D-213: round-trip the snap turn 45 -> 30 and the turn mode Smooth -> Snap.
         HostConfigTool.ApplySnapTurnDegrees(loaded, 45f);
         HostConfigTool.ApplySnapTurnDegrees(loaded, HostConfigTool.DefaultSnapTurnDegrees);
+        HostConfigTool.ApplyTurnMode(loaded, "Smooth");
+        HostConfigTool.ApplySmoothTurnDegreesPerSecond(loaded, 180f);
+        HostConfigTool.ApplyTurnMode(loaded, HostConfigTool.DefaultTurnMode);
+        HostConfigTool.ApplySmoothTurnDegreesPerSecond(loaded, HostConfigTool.DefaultSmoothTurnDegreesPerSecond);
         string backup = HostConfigTool.Save(path, loaded);
         JsonObject written = HostConfigTool.Load(path);
         PictureSize readBack = HostConfigTool.Read(written);
@@ -247,14 +250,17 @@ internal static class Program
             // D-186-FovScale: the shipped default (1.0) lands back on both axes after the 0.85/0.80 -> 1.0
             // round-trip, and the legacy single FovScale key was retired by ApplyFovScaleX.
             HostConfigTool.ReadFovScaleX(written) == 1.0f && HostConfigTool.ReadFovScaleY(written) == 1.0f && written["FovScale"] == null &&
-            // D-211: the snap-turn key lands on the shipped 30 after the 45 -> 30 round-trip.
-            HostConfigTool.ReadSnapTurnDegrees(written) == HostConfigTool.DefaultSnapTurnDegrees;
+            // D-211/D-213: the turn keys land on the shipped defaults after the round-trip.
+            HostConfigTool.ReadSnapTurnDegrees(written) == HostConfigTool.DefaultSnapTurnDegrees &&
+            HostConfigTool.ReadTurnMode(written) == HostConfigTool.DefaultTurnMode &&
+            HostConfigTool.ReadSmoothTurnDegreesPerSecond(written) == HostConfigTool.DefaultSmoothTurnDegreesPerSecond;
         Write("SELFTEST " + (keys ? "PASS" : "FAIL") + " " + readBack.Preview + " uiscale=" + HostConfigTool.ReadUiScale(written) +
             " msaa=" + HostConfigTool.ReadEyeMsaa(written) + " aniso=" + (HostConfigTool.ReadAnisotropic(written) is bool ra ? (ra ? "16x" : "off") : "(absent)") +
             " fovX=" + (HostConfigTool.ReadFovScaleX(written) is float rfx ? rfx.ToString("0.00", CultureInfo.InvariantCulture) : "(absent)") +
             " fovY=" + (HostConfigTool.ReadFovScaleY(written) is float rfy ? rfy.ToString("0.00", CultureInfo.InvariantCulture) : "(absent)") +
             " legacy=" + (written["FovScale"] == null ? "retired" : "kept") +
             " snap=" + (HostConfigTool.ReadSnapTurnDegrees(written) is float rs ? rs.ToString("0.#", CultureInfo.InvariantCulture) : "(absent)") +
+            " turn=" + (HostConfigTool.ReadTurnMode(written) ?? "(absent)") +
             " backup=" + File.Exists(backup));
         return keys ? Ok : Failed;
     }
