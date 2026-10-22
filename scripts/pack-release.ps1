@@ -38,6 +38,20 @@ Set-Location -LiteralPath $repo
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
+function Test-Utf16String([byte[]]$bytes, [string]$needle) {
+    $pattern = [Text.Encoding]::Unicode.GetBytes($needle)
+    $last = $bytes.Length - $pattern.Length
+    for ($i = 0; $i -le $last; $i++) {
+        if ($bytes[$i] -ne $pattern[0]) { continue }
+        $hit = $true
+        for ($j = 1; $j -lt $pattern.Length; $j++) {
+            if ($bytes[$i + $j] -ne $pattern[$j]) { $hit = $false; break }
+        }
+        if ($hit) { return $true }
+    }
+    return $false
+}
+
 $dist = Join-Path $repo 'dist'
 $baseZip = Join-Path $dist ('VampireHuntersVR-{0}.zip' -f $BaseVersion)
 $outZip = Join-Path $dist ('VampireHuntersVR-{0}.zip' -f $Version)
@@ -94,13 +108,13 @@ $notesFirst = (Get-Content -LiteralPath (Join-Path $stage 'ModNotes.txt') -Total
 if ($notesFirst -notmatch [regex]::Escape($Version)) {
     throw ("ModNotes.txt first line does not name {0}: {1}" -f $Version, $notesFirst)
 }
-$pluginText = [Text.Encoding]::Unicode.GetString([IO.File]::ReadAllBytes((Join-Path $stage 'payload\BepInEx\plugins\VampireHuntersVR.Stage0.dll')))
-if (($pluginText -notmatch 'snapTurnsApplied') -or ($pluginText -notmatch 'SNAP_TURN')) {
-    throw 'Stage0.dll is not the D-211 build (snap-turn receipt/log strings missing)'
+$pluginBytes = [IO.File]::ReadAllBytes((Join-Path $stage 'payload\BepInEx\plugins\VampireHuntersVR.Stage0.dll'))
+if (-not (Test-Utf16String $pluginBytes 'snapTurnsApplied') -or -not (Test-Utf16String $pluginBytes 'SNAP_TURN') -or -not (Test-Utf16String $pluginBytes 'viewTurnedDegrees')) {
+    throw 'Stage0.dll is not the D-211/D-213 build (turn receipt/log strings missing)'
 }
-$settingsText = [Text.Encoding]::Unicode.GetString([IO.File]::ReadAllBytes((Join-Path $stage 'VhvrSettings.dll')))
-if ($settingsText -notmatch 'Snap turn') {
-    throw 'VhvrSettings.dll is not the D-211 build (snap-turn control missing)'
+$settingsBytes = [IO.File]::ReadAllBytes((Join-Path $stage 'VhvrSettings.dll'))
+if (-not (Test-Utf16String $settingsBytes 'Snap turn') -or -not (Test-Utf16String $settingsBytes 'Smooth')) {
+    throw 'VhvrSettings.dll is not the D-211/D-213 build (Snap/Smooth turn controls missing)'
 }
 
 if (Test-Path -LiteralPath $outZip) { Remove-Item -LiteralPath $outZip -Force }

@@ -1,3 +1,18 @@
+Vampire Hunters VR - v0.9.7 (2026-10-22)
+========================================
+
+v0.9.7 changes (D-213) - smooth turn:
+- Right stick view turn now has four choices in VhvrSettings.exe -> 'Turn (right stick)':
+  Off, 30 deg (default), 45 deg, or Smooth.
+- Smooth rotates the view continuously while you hold the right stick left/right (120 deg/s default;
+  stops while paused). Snap 30 deg / 45 deg and Off remain unchanged and Snap 30 deg stays the default.
+- The Turn radio buttons in VhvrSettings.exe are now isolated in their own group so changing Picture
+  size never unchecks your Turn choice (or vice versa).
+- Both Snap and Smooth rotate the same session view-yaw offset: eyes, hands, weapon, reticle and
+  head-relative movement turn together in place; your position in the level does not move.
+
+--------------------------------------------------------------------------------
+
 Vampire Hunters VR - v0.9.6 (2026-10-22)
 ========================================
 
